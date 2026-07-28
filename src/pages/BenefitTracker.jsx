@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
-import { initialBenefits } from "../data/mockData";
+import { initialBenefits } from "../data/players";
 
 function BenefitTracker() {
   const [rows, setRows] = useState(initialBenefits);

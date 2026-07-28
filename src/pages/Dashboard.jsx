@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader";
 import StatCard from "../components/ui/StatCard";
-import { players, results } from "../data/mockData";
+import { players } from "../data/players";
+import { seasons } from "../data/seasons";
+import { results } from "../data/results";
+import { benefits } from "../data/benefits";
+import { awards } from "../data/awards";
 
 function Dashboard() {
   const activePlayers = players.filter((player) => player.status === "Aktív").length;

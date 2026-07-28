@@ -1,5 +1,5 @@
 import PageHeader from "../components/ui/PageHeader";
-import { players } from "../data/mockData";
+import { players } from "../data/players";
 function Statistics() {
   const topScorers = [...players].sort((a,b) => b.goals-a.goals).slice(0,5);
   const maxGoals = Math.max(...topScorers.map((player) => player.goals));
