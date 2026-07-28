@@ -1,4 +1,31 @@
 import { NavLink } from "react-router-dom";
+const navigationItems = [
+  {
+    label: "Dashboard",
+    path: "/",
+    icon: "▦",
+  },
+  {
+    label: "Játékoskeret",
+    path: "/squad",
+    icon: "♟",
+  },
+  {
+    label: "Szezonok",
+    path: "/seasons",
+    icon: "▣",
+  },
+  {
+    label: "Mérkőzések",
+    path: "/matches",
+    icon: "⚔",
+  },
+  {
+    label: "Szavazások",
+    path: "/voting",
+    icon: "✓",
+  },
+];
 
 const menuItems = [
   { to: "/dashboard", label: "Dashboard", icon: "▦" },

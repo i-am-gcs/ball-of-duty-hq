@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
+import Matches from "./pages/Matches";
+import SeasonDetails from "./pages/SeasonDetails";
 import Dashboard from "./pages/Dashboard";
 import Squad from "./pages/Squad";
 import Seasons from "./pages/Seasons";
@@ -7,6 +9,7 @@ import Voting from "./pages/Voting";
 import BenefitTracker from "./pages/BenefitTracker";
 import Statistics from "./pages/Statistics";
 import Settings from "./pages/Settings";
+import MatchDetails from "./pages/MatchDetails";
 
 function App() {
   return (
@@ -20,6 +23,9 @@ function App() {
         <Route path="/benefits" element={<BenefitTracker />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/matches/:matchId" element={<MatchDetails />} />
+        <Route path="/matches" element={<Matches />} />
+        <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

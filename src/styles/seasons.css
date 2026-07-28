@@ -1,0 +1,518 @@
+.season-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.season-card {
+  position: relative;
+  display: flex;
+  min-height: 390px;
+  padding: 26px;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.season-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(91, 238, 195, 0.38);
+  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.24);
+}
+
+.season-card::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  right: -90px;
+  top: -90px;
+  border: 1px solid rgba(91, 238, 195, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.season-card--active {
+  border-color: rgba(91, 238, 195, 0.45);
+}
+
+.season-card--upcoming {
+  border-color: rgba(211, 184, 83, 0.3);
+}
+
+.season-card__header {
+  position: relative;
+  z-index: 1;
+}
+
+.season-card__header h3 {
+  margin: 14px 0 6px;
+  font-size: 21px;
+}
+
+.season-card__period {
+  margin: 0;
+  color: #81979e;
+  font-size: 14px;
+}
+
+.season-card__competitions {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.season-card__competition {
+  padding: 14px 15px;
+  border: 1px solid #203840;
+  border-radius: 12px;
+  background: rgba(7, 22, 27, 0.52);
+}
+
+.season-card__competition div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.season-card__competition-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9cb0b6;
+  font-size: 14px;
+}
+
+.season-card__competition strong {
+  color: #e8f2f2;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.season-card__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: auto;
+  padding-top: 22px;
+  border-top: 1px solid #203840;
+}
+
+.season-card__footer div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.season-card__footer-label {
+  color: #738a91;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.season-card__footer strong {
+  color: #d8e9e8;
+  font-size: 15px;
+}
+
+.season-card__button {
+  padding: 10px 13px;
+  border: 1px solid #2a4b53;
+  border-radius: 9px;
+  color: #66e5bf;
+  background: #10262c;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.season-card__button:hover {
+  border-color: #4bd4ac;
+  background: rgba(75, 212, 172, 0.1);
+}
+
+.status-pill--upcoming {
+  color: #dac779;
+  background: rgba(196, 167, 70, 0.11);
+}
+
+/* SEASON DETAILS */
+
+.season-details__back {
+  width: max-content;
+
+  color: #7f999f;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  transition: color 0.2s ease;
+}
+
+.season-details__back:hover {
+  color: #6ce4c0;
+}
+
+.season-details__hero {
+  min-height: auto;
+  padding: 28px;
+}
+
+.season-details__hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 28px;
+}
+
+.season-details__number {
+  color: #647b82;
+
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.season-details__hero h2 {
+  margin: 8px 0 0;
+
+  font-size: clamp(30px, 4vw, 46px);
+}
+
+.season-details__period {
+  margin: 10px 0 0;
+
+  color: #81979e;
+
+  font-size: 15px;
+}
+
+.season-details__section {
+  padding: 24px;
+}
+
+.season-details__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.season-details__section-heading h3 {
+  margin: 5px 0 0;
+
+  font-size: 22px;
+}
+
+.season-details__competition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.season-details__competition-card {
+  padding: 22px;
+}
+
+.season-details__competition-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.season-details__competition-header span {
+  color: #688087;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.season-details__competition-header h4 {
+  margin: 6px 0 0;
+
+  font-size: 20px;
+}
+
+.season-details__competition-header > strong {
+  color: #67e1bc;
+
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.season-details__stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-top: 22px;
+}
+
+.season-details__stats-row div {
+  padding: 12px;
+
+  border: 1px solid #203940;
+  border-radius: 10px;
+
+  background: rgba(7, 19, 23, 0.5);
+}
+
+.season-details__stats-row span,
+.season-details__stats-row strong {
+  display: block;
+}
+
+.season-details__stats-row span {
+  color: #6f868d;
+
+  font-size: 11px;
+}
+
+.season-details__stats-row strong {
+  margin-top: 5px;
+
+  font-size: 16px;
+}
+
+.season-details__cup-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  margin-top: 22px;
+  padding: 14px;
+
+  border: 1px solid #203940;
+  border-radius: 10px;
+
+  background: rgba(7, 19, 23, 0.5);
+}
+
+.season-details__cup-result span {
+  color: #748b92;
+
+  font-size: 12px;
+}
+
+.season-details__podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.season-details__podium-player {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 16px;
+
+  border: 1px solid #203940;
+  border-radius: 12px;
+
+  background: rgba(7, 19, 23, 0.45);
+}
+
+.season-details__podium-position {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #071612;
+  background: #63dfba;
+
+  font-weight: 900;
+}
+
+.season-details__podium-player strong,
+.season-details__podium-player div span {
+  display: block;
+}
+
+.season-details__podium-player div span {
+  margin-top: 3px;
+
+  color: #70888f;
+
+  font-size: 12px;
+}
+
+.season-details__awards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.season-details__award {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 16px;
+
+  border: 1px solid #203940;
+  border-radius: 12px;
+
+  background: rgba(7, 19, 23, 0.45);
+}
+
+.season-details__award strong,
+.season-details__award span {
+  display: block;
+}
+
+.season-details__award span {
+  margin-top: 4px;
+
+  color: #6f878e;
+
+  font-size: 12px;
+}
+
+.season-details__award p {
+  margin: 0;
+
+  color: #64dfbb;
+
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.season-details__milestones {
+  display: grid;
+  gap: 10px;
+}
+
+.season-details__milestone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #203940;
+  border-radius: 11px;
+
+  background: rgba(7, 19, 23, 0.4);
+}
+
+.season-details__milestone span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #65dfbb;
+  background: rgba(75, 214, 173, 0.12);
+
+  font-weight: 900;
+}
+
+.season-details__milestone p {
+  margin: 0;
+}
+
+.season-details__not-found {
+  padding: 34px;
+}
+
+.season-details__not-found h2 {
+  margin: 8px 0 24px;
+}
+
+.season-card__details {
+  color: #62dfba;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  transition: color 0.2s ease;
+}
+
+.season-card__details:hover {
+  color: #9af4d9;
+}
+
+/* SEASON STATISTICS */
+
+.season-statistics {
+  padding: 24px;
+}
+
+.season-statistics__competition-count {
+  color: #71888f;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.season-statistics__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.season-statistics__item {
+  padding: 16px;
+
+  border: 1px solid #203940;
+  border-radius: 12px;
+
+  background: rgba(7, 19, 23, 0.48);
+}
+
+.season-statistics__item span,
+.season-statistics__item strong {
+  display: block;
+}
+
+.season-statistics__item span {
+  color: #70868d;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.season-statistics__item strong {
+  margin-top: 8px;
+
+  color: #edf7f4;
+
+  font-size: 24px;
+}
+
+.season-statistics__item:nth-child(2) strong,
+.season-statistics__item:nth-child(7) strong,
+.season-statistics__item:nth-child(8) strong {
+  color: #66e0bc;
+}
+

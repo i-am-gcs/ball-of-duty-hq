@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
-import { players } from "../data/mockData";
+import { players } from "../data/players";
 
 function Squad() {
   const [filter, setFilter] = useState("Összes");

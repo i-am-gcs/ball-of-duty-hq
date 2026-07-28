@@ -1,0 +1,280 @@
+@media (max-width: 800px) {
+  .app-content {
+    margin-left: 0;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+
+    display: block;
+
+    border: 0;
+
+    background: rgba(0, 0, 0, 0.56);
+  }
+
+  .menu-button {
+    display: block;
+  }
+
+  .topbar {
+    padding: 14px 18px;
+  }
+
+  .profile-copy {
+    display: none;
+  }
+
+  .page-content {
+    padding: 20px;
+  }
+
+  .season-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar input {
+    max-width: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .page-header h2 {
+    font-size: 28px;
+  }
+
+  .profile-box {
+    display: none;
+  }
+
+  .form-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 900px) {
+  .season-details__competition-grid,
+  .season-details__awards {
+    grid-template-columns: 1fr;
+  }
+
+  .season-details__podium {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .season-details__hero,
+  .season-details__section,
+  .season-details__competition-card {
+    padding: 18px;
+  }
+
+  .season-details__hero-top,
+  .season-details__competition-header,
+  .season-details__cup-result,
+  .season-details__award {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .season-details__stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .season-details__award p {
+    text-align: left;
+  }
+}
+@media (max-width: 1000px) {
+  .season-statistics__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .season-statistics {
+    padding: 18px;
+  }
+
+  .season-statistics__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .season-statistics__competition-count {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .match-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .match-toolbar__field {
+    min-width: 0;
+  }
+
+  .match-toolbar__filters {
+    justify-content: flex-start;
+  }
+
+  .match-card__scoreboard {
+    grid-template-columns: 1fr;
+    gap: 18px;
+
+    text-align: center;
+  }
+
+  .match-card__team--away {
+    text-align: center;
+  }
+
+  .match-card__score {
+    justify-content: center;
+
+    order: -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .match-card {
+    padding: 16px;
+  }
+
+  .match-card__header,
+  .match-card__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .match-card__score {
+    font-size: 29px;
+  }
+}
+@media (max-width: 1150px) {
+  .dashboard-summary-grid,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .dashboard-summary-grid,
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-summary-card,
+  .stat-card,
+  .dashboard-panel,
+  .next-match {
+    padding: 18px;
+  }
+
+  .next-match__teams {
+    grid-template-columns: 1fr;
+    gap: 18px;
+
+    text-align: center;
+  }
+
+  .next-match__team--away {
+    text-align: center;
+  }
+
+  .next-match__versus {
+    order: -1;
+  }
+
+  .next-match__footer,
+  .dashboard-panel__header,
+  .dashboard-list__item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 900px) {
+  .match-details__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .match-details__meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .match-details__scoreboard {
+    grid-template-columns: 1fr;
+    gap: 20px;
+
+    padding: 30px 0;
+    text-align: center;
+  }
+
+  .match-details__team--away {
+    text-align: center;
+  }
+
+  .match-details__score {
+    justify-content: center;
+    order: -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .match-details__hero,
+  .match-details__section {
+    padding: 18px;
+  }
+
+  .match-details__hero-header {
+    flex-direction: column;
+  }
+
+  .match-details__score {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .match-badge {
+    width: 84px;
+    height: 84px;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .result-row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+}
