@@ -1,30 +1,66 @@
 export const matches = [
   {
     id: 1,
+
     seasonId: 1,
-    competitionId: "hpcl-cup-season-1",
-    competitionName: "HPCL Cup",
-    competitionType: "cup",
-    round: "Round of 32",
-    date: null,
+
+    competition: "HPCL Cup",
+    stage: "Round of 32",
+
+    date: "2026-04-08",
+    kickoff: "20:00",
+
     homeTeam: "MTK Budapest eSport",
     awayTeam: "Ball of Duty",
+
     homeScore: 4,
     awayScore: 1,
-    status: "completed",
+
+    outcome: "Loss",
+
+    lineup: [
+      "Magickacsa",
+      "Tari",
+      "Ábel",
+      "..."
+    ],
+
+    events: [
+      {
+        minute: 63,
+        type: "goal",
+        player: "Magickacsa"
+      }
+    ],
+
+    notes:
+      "Első hivatalos kupamérkőzés."
   },
+
   {
     id: 2,
+
     seasonId: 2,
-    competitionId: "hungarian-cup-season-2",
-    competitionName: "Magyar Kupa",
-    competitionType: "cup",
-    round: "Elődöntő",
-    date: null,
+
+    competition: "Hungarian Cup",
+    stage: "Semi Final",
+
+    date: "2026-06-01",
+    kickoff: "20:00",
+
     homeTeam: "Ball of Duty",
     awayTeam: "DVTK",
+
     homeScore: 1,
     awayScore: 3,
-    status: "completed",
-  },
+
+    outcome: "Loss",
+
+    lineup: [],
+
+    events: [],
+
+    notes:
+      "Elődöntő."
+  }
 ];

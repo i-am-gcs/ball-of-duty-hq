@@ -1,114 +1,207 @@
-import { useState } from "react";
-import MatchCard from "../components/matches/MatchCard";
+import { Link, useParams } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader";
 import { matches } from "../data/matches";
-import { seasons } from "../data/seasons";
-import { Link } from "react-router-dom";
 
-function Matches() {
-  const sortedSeasons = [...seasons].sort(
-    (firstSeason, secondSeason) => secondSeason.id - firstSeason.id,
+function MatchDetails() {
+  const { matchId } = useParams();
+
+  const selectedMatch = matches.find(
+    (match) => match.id === Number(matchId)
   );
 
-  const [selectedSeasonId, setSelectedSeasonId] = useState(
-    sortedSeasons[0]?.id ?? null,
-  );
+  if (!selectedMatch) {
+    return (
+      <div className="page-stack">
+        <PageHeader
+          eyebrow="Match archive"
+          title="A mérkőzés nem található"
+          description="A megadott azonosítóval nem szerepel mérkőzés az archívumban."
+        />
 
-  const [selectedCompetition, setSelectedCompetition] = useState("all");
+        <section className="panel match-details-empty">
+          <p>Lehetséges, hogy a mérkőzést törölték vagy hibás linket nyitottál meg.</p>
 
-  const seasonMatches = matches.filter(
-    (match) => match.seasonId === selectedSeasonId,
-  );
-
-  const competitionNames = [
-    ...new Set(
-      seasonMatches.map((match) => match.competitionName),
-    ),
-  ];
-
-  const filteredMatches =
-    selectedCompetition === "all"
-      ? seasonMatches
-      : seasonMatches.filter(
-          (match) => match.competitionName === selectedCompetition,
-        );
-
-  function handleSeasonChange(event) {
-    setSelectedSeasonId(Number(event.target.value));
-    setSelectedCompetition("all");
+          <Link to="/matches" className="match-details-back-link">
+            ← Vissza a mérkőzésekhez
+          </Link>
+        </section>
+      </div>
+    );
   }
+
+  const hasLineup = selectedMatch.lineup.length > 0;
+  const hasEvents = selectedMatch.events.length > 0;
 
   return (
     <div className="page-stack">
       <PageHeader
         eyebrow="Match archive"
-        title="Mérkőzések"
-        description="A klub hivatalos mérkőzéseinek és eredményeinek archívuma."
+        title={`${selectedMatch.homeTeam} – ${selectedMatch.awayTeam}`}
+        description={`${selectedMatch.competition} · ${selectedMatch.stage}`}
       />
 
-      <section className="panel match-toolbar">
-        <label className="match-toolbar__field">
-          <span>Szezon</span>
+      <Link to="/matches" className="match-details-back-link">
+        ← Vissza a mérkőzésekhez
+      </Link>
 
-          <select
-            value={selectedSeasonId ?? ""}
-            onChange={handleSeasonChange}
-          >
-            {sortedSeasons.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name ??
-                  season.title ??
-                  `Ball of Duty ${season.id}. szezon`}
-              </option>
-            ))}
-          </select>
-        </label>
+      <section className="panel match-details-hero">
+        <div className="match-details-hero__meta">
+          <span>{selectedMatch.competition}</span>
+          <strong>{selectedMatch.stage}</strong>
+        </div>
 
-        <div className="match-toolbar__filters">
-          <button
-            type="button"
-            className={selectedCompetition === "all" ? "active" : ""}
-            onClick={() => setSelectedCompetition("all")}
-          >
-            Összes
-          </button>
+        <div className="match-details-scoreboard">
+          <div className="match-details-team">
+            <span>Hazai csapat</span>
+            <strong>{selectedMatch.homeTeam}</strong>
+          </div>
 
-          {competitionNames.map((competitionName) => (
-            <button
-              type="button"
-              key={competitionName}
-              className={
-                selectedCompetition === competitionName ? "active" : ""
-              }
-              onClick={() =>
-                setSelectedCompetition(competitionName)
-              }
+          <div className="match-details-score">
+            <strong>
+              {selectedMatch.homeScore} : {selectedMatch.awayScore}
+            </strong>
+
+            <span
+              className={`status-pill ${
+                selectedMatch.outcome === "Win"
+                  ? "status-pill--success"
+                  : selectedMatch.outcome === "Draw"
+                    ? "status-pill--neutral"
+                    : "status-pill--danger"
+              }`}
             >
-              {competitionName}
-            </button>
-          ))}
+              {selectedMatch.outcome}
+            </span>
+          </div>
+
+          <div className="match-details-team match-details-team--away">
+            <span>Vendégcsapat</span>
+            <strong>{selectedMatch.awayTeam}</strong>
+          </div>
+        </div>
+
+        <div className="match-details-hero__footer">
+          <span>{selectedMatch.date}</span>
+          <strong>{selectedMatch.kickoff}</strong>
         </div>
       </section>
 
-      {filteredMatches.length > 0 ? (
-        <section className="match-list">
-          {filteredMatches.map((match) => (
-            <MatchCard key={match.id} match={match} />
-          ))}
-        </section>
-      ) : (
-        <section className="panel match-empty-state">
-          <p className="eyebrow">No matches</p>
-          <h3>Nincs rögzített mérkőzés</h3>
+      <section className="match-details-grid">
+        <article className="panel match-details-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Mérkőzésadatok</p>
+              <h3>Információk</h3>
+            </div>
+          </div>
 
-          <p>
-            Ehhez a szezonhoz és versenysorozathoz még nem adtunk
-            mérkőzést.
+          <div className="match-info-list">
+            <div className="match-info-row">
+              <span>Versenysorozat</span>
+              <strong>{selectedMatch.competition}</strong>
+            </div>
+
+            <div className="match-info-row">
+              <span>Szakasz</span>
+              <strong>{selectedMatch.stage}</strong>
+            </div>
+
+            <div className="match-info-row">
+              <span>Dátum</span>
+              <strong>{selectedMatch.date}</strong>
+            </div>
+
+            <div className="match-info-row">
+              <span>Kezdés</span>
+              <strong>{selectedMatch.kickoff}</strong>
+            </div>
+
+            <div className="match-info-row">
+              <span>Szezonazonosító</span>
+              <strong>{selectedMatch.seasonId}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article className="panel match-details-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Keret</p>
+              <h3>Kezdőcsapat</h3>
+            </div>
+          </div>
+
+          {hasLineup ? (
+            <div className="match-lineup-list">
+              {selectedMatch.lineup.map((player, index) => (
+                <div
+                  className="match-lineup-player"
+                  key={`${player}-${index}`}
+                >
+                  <span>{index + 1}</span>
+                  <strong>{player}</strong>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="dashboard-empty">
+              <p>Ehhez a mérkőzéshez még nincs rögzített összeállítás.</p>
+            </div>
+          )}
+        </article>
+
+        <article className="panel match-details-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Mérkőzés eseményei</p>
+              <h3>Idővonal</h3>
+            </div>
+          </div>
+
+          {hasEvents ? (
+            <div className="match-events-list">
+              {selectedMatch.events.map((event, index) => (
+                <div
+                  className="match-event-row"
+                  key={`${event.minute}-${event.player}-${index}`}
+                >
+                  <span className="match-event-minute">
+                    {event.minute}'
+                  </span>
+
+                  <span className="match-event-icon">
+                    {event.type === "goal" ? "⚽" : "•"}
+                  </span>
+
+                  <div>
+                    <strong>{event.player}</strong>
+                    <span>{event.type}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="dashboard-empty">
+              <p>Ehhez a mérkőzéshez még nincs rögzített esemény.</p>
+            </div>
+          )}
+        </article>
+
+        <article className="panel match-details-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Meccsjegyzet</p>
+              <h3>Megjegyzések</h3>
+            </div>
+          </div>
+
+          <p className="match-details-notes">
+            {selectedMatch.notes || "Ehhez a mérkőzéshez még nincs megjegyzés."}
           </p>
-        </section>
-      )}
+        </article>
+      </section>
     </div>
   );
 }
 
-export default Matches;
+export default MatchDetails;

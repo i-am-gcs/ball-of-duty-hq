@@ -278,3 +278,51 @@
     align-items: flex-start;
   }
 }
+
+@media (max-width: 800px) {
+  .match-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .match-details-scoreboard {
+    grid-template-columns: 1fr;
+    gap: 24px;
+
+    text-align: center;
+  }
+
+  .match-details-team--away {
+    text-align: center;
+  }
+
+  .match-details-team {
+    text-align: center;
+  }
+
+  .match-details-score {
+    order: -1;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .match-details-hero {
+    padding: 20px;
+  }
+
+  .match-details-hero__meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .match-info-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .match-info-row strong {
+    text-align: left;
+  }
+}

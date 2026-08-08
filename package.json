@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
+    "firebase": "^12.17.0",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest"
-  },
-  "devDependencies": {}
+    "react-router-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
 }
