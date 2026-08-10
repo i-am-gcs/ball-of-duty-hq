@@ -1,5 +1,65 @@
 /* DASHBOARD */
 
+.dashboard-brand-hero {
+  position: relative;
+  display: flex;
+  min-height: 260px;
+  overflow: hidden;
+  align-items: center;
+  padding: clamp(28px, 5vw, 54px);
+  border: 1px solid rgba(255, 196, 0, 0.25);
+  border-radius: 22px;
+  background:
+    linear-gradient(90deg, rgba(4, 15, 20, 0.12), rgba(4, 15, 20, 0.05)),
+    url("/assets/brand/bod-dashboard-banner-v3.png") center / cover no-repeat;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22);
+}
+
+.dashboard-brand-hero::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.18);
+  content: "";
+}
+
+.dashboard-brand-hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+}
+
+.dashboard-brand-hero h2 {
+  max-width: 600px;
+  margin: 10px 0 0;
+  font-size: clamp(31px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.dashboard-brand-hero__content > p:last-child {
+  max-width: 570px;
+  margin: 16px 0 0;
+  color: #9bb2b8;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .dashboard-brand-hero {
+    min-height: 300px;
+    align-items: flex-end;
+    background-position: 65% center;
+  }
+
+  .dashboard-brand-hero::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(0deg, rgba(4, 15, 20, 0.96) 0%, rgba(4, 15, 20, 0.22) 78%);
+  }
+}
+
 .dashboard-hero {
   display: flex;
   align-items: flex-end;

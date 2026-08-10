@@ -1,0 +1,59 @@
+.poll-category-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.poll-category-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px 18px;
+  border: 1px solid var(--bod-border, #203840);
+  border-radius: 16px;
+  color: var(--bod-text-muted, #9fa793);
+  background: var(--bod-surface, #0d1710);
+  text-align: left;
+  cursor: pointer;
+}
+
+.poll-category-tabs button > span:first-child { font-size: 24px; }
+.poll-category-tabs strong, .poll-category-tabs small { display: block; }
+.poll-category-tabs small { margin-top: 3px; color: var(--bod-text-muted, #9fa793); }
+.poll-category-tabs button.active { color: #171304; border-color: var(--bod-gold, #f5bd16); background: linear-gradient(135deg, var(--bod-gold-bright, #ffd23f), var(--bod-gold, #f5bd16)); }
+.poll-category-tabs button.active small { color: rgba(23, 19, 4, 0.72); }
+
+.poll-section { display: grid; gap: 18px; }
+.poll-section__heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.poll-section__heading h2 { margin: 6px 0 0; font-size: 24px; }
+.poll-section__heading > span { color: var(--bod-text-muted, #9fa793); font-size: 12px; }
+
+.discord-poll-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.discord-poll { display: grid; gap: 16px; padding: 20px; }
+.discord-poll--closed { opacity: 0.76; }
+.discord-poll__top, .discord-poll__footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.poll-state { padding: 5px 9px; border-radius: 999px; color: #082117; background: var(--bod-success, #63d6a8); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.poll-state--closed { color: #dadbcf; background: rgba(159, 167, 147, 0.16); }
+.discord-poll__time { color: var(--bod-gold-bright, #ffd23f); font-size: 12px; font-weight: 800; }
+.discord-poll h3 { margin: 0; font-size: 19px; line-height: 1.35; }
+.poll-answers { display: grid; gap: 11px; }
+.poll-answer { display: grid; gap: 6px; }
+.poll-answer > div:first-child { display: flex; justify-content: space-between; gap: 12px; color: var(--bod-text-muted, #9fa793); font-size: 14px; }
+.poll-answer strong { color: var(--bod-text, #f1ead6); }
+.poll-answer--leading > div:first-child span { color: var(--bod-gold-bright, #ffd23f); font-weight: 800; }
+.poll-answer__emoji { margin-right: 6px; }
+.poll-answer__bar { height: 6px; overflow: hidden; border-radius: 999px; background: rgba(159, 167, 147, 0.14); }
+.poll-answer__bar span { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: var(--bod-gold, #f5bd16); transition: width 0.25s ease; }
+.discord-poll__footer { padding-top: 14px; border-top: 1px solid var(--bod-border, #203840); color: var(--bod-text-muted, #9fa793); font-size: 12px; }
+.discord-poll__footer a { color: var(--bod-gold-bright, #ffd23f); font-weight: 800; }
+.discord-poll__expiry { margin: -8px 0 0; color: var(--bod-text-muted, #9fa793); font-size: 11px; }
+.poll-empty { padding: 42px 24px; text-align: center; }
+.poll-empty > span { font-size: 32px; }
+.poll-empty h3 { margin: 9px 0 6px; }
+.poll-empty p { max-width: 460px; margin: 0 auto; color: var(--bod-text-muted, #9fa793); }
+
+@media (max-width: 700px) {
+  .poll-category-tabs { grid-template-columns: 1fr; }
+  .poll-section__heading { align-items: flex-start; flex-direction: column; }
+  .discord-poll-grid { grid-template-columns: 1fr; }
+}

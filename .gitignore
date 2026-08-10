@@ -2,3 +2,7 @@ node_modules
 .env
 .env.*
 dist
+vite*.log
+
+!bot/.env.example
+bot/serviceAccountKey.json

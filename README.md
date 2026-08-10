@@ -36,3 +36,5 @@ npm run preview
 - EA / FC statisztikai adatforrás
 - admin jogosultságok
 - tesztek Vitest + React Testing Library segítségével
+
+**!!REACT COMPILER!!**

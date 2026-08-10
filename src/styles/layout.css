@@ -270,3 +270,28 @@
 .sidebar-backdrop {
   display: none;
 }
+
+.brand-logo {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border: 1px solid rgba(255, 196, 0, 0.28);
+  border-radius: 15px;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(255, 186, 0, 0.12);
+}
+
+.logout-button {
+  margin-left: 8px;
+  padding: 8px 11px;
+  border: 1px solid #29444c;
+  border-radius: 9px;
+  color: #9db0b6;
+  background: transparent;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  color: #ffffff;
+  border-color: #47d9b2;
+}

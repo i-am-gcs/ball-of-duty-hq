@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /player-avatars/{playerId}/{ownerId}.webp {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && (request.auth.token.admin == true || request.auth.uid == ownerId)
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType == 'image/webp';
+      allow delete: if request.auth != null
+        && (request.auth.token.admin == true || request.auth.uid == ownerId);
+    }
+  }
+}

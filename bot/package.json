@@ -1,0 +1,17 @@
+{
+  "name": "ball-of-duty-hq-discord-bot",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/firebase.js && node --check src/pollSync.js && node --check scripts/makeAdmin.js",
+    "make-admin": "node scripts/makeAdmin.js",
+    "delete-user": "node scripts/deleteUser.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "firebase-admin": "^14.2.0"
+  }
+}

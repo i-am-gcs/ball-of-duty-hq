@@ -1,0 +1,66 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "players": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": "auth != null && auth.token.admin === true",
+      "$playerId": {
+        "eaId": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        },
+        "discordName": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        },
+        "preferredFoot": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        },
+        "secondaryPositions": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        },
+        "bio": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        },
+        "avatarUrl": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        },
+        "avatarPath": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('status').val() === 'approved' && root.child('users').child(auth.uid).child('playerId').val() === $playerId"
+        }
+      }
+    },
+    "seasons": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": "auth != null && auth.token.admin === true"
+    },
+    "matches": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": "auth != null && auth.token.admin === true"
+    },
+    "discordPolls": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": false
+    },
+    "discordVotes": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": false
+    },
+    "settings": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": "auth != null && auth.token.admin === true"
+    },
+    "users": {
+      ".read": "auth != null && auth.token.admin === true",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".write": "auth != null && (auth.token.admin === true || (auth.uid === $uid && ((!data.exists() && newData.child('status').val() === 'pending') || (data.exists() && newData.child('status').val() === data.child('status').val()))))",
+        "admin": {
+          ".validate": "auth.token.admin === true"
+        },
+        "role": {
+          ".validate": "auth.token.admin === true"
+        }
+      }
+    }
+  }
+}

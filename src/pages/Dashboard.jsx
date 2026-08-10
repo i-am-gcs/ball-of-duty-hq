@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import PageHeader from "../components/ui/PageHeader";
 import StatCard from "../components/ui/StatCard";
 import { players } from "../data/players";
 import { results } from "../data/results";
@@ -9,11 +8,13 @@ function Dashboard() {
 
   return (
     <div className="page-stack">
-      <PageHeader
-        eyebrow="Club overview"
-        title="Üdv a Ball of Duty főhadiszállásán"
-        description="A klub legfontosabb adatai, eredményei és következő feladatai egyetlen helyen."
-      />
+      <section className="dashboard-brand-hero">
+        <div className="dashboard-brand-hero__content">
+          <p className="eyebrow">Club overview</p>
+          <h2>Üdv a Ball of Duty főhadiszállásán</h2>
+          <p>A klub legfontosabb adatai, eredményei és következő feladatai egyetlen helyen.</p>
+        </div>
+      </section>
 
       <section className="stat-grid">
         <StatCard label="Keretlétszám" value={players.length} detail={`${activePlayers} aktív játékos`} icon="♟" />

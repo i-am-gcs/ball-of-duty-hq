@@ -1,0 +1,276 @@
+:root {
+  --bod-gold: #f5bd16;
+  --bod-gold-bright: #ffd23f;
+  --bod-gold-soft: #c99414;
+  --bod-olive: #536b22;
+  --bod-olive-muted: #334419;
+  --bod-forest: #14220d;
+  --bod-bg: #080f0b;
+  --bod-surface: #0d1710;
+  --bod-surface-raised: #121e14;
+  --bod-surface-soft: #172319;
+  --bod-border: #2b3925;
+  --bod-border-strong: #46552d;
+  --bod-text: #f1ead6;
+  --bod-text-muted: #9fa793;
+  --bod-success: #63d6a8;
+  --bod-danger: #ff7b7b;
+}
+
+body {
+  color: var(--bod-text);
+  background:
+    radial-gradient(circle at 78% 0%, rgba(154, 132, 28, 0.1), transparent 30%),
+    radial-gradient(circle at 8% 85%, rgba(57, 78, 25, 0.12), transparent 28%),
+    var(--bod-bg);
+}
+
+.sidebar {
+  border-right-color: var(--bod-border);
+  background: rgba(11, 20, 13, 0.98);
+}
+
+.topbar {
+  border-bottom-color: rgba(70, 85, 45, 0.78);
+  background: rgba(8, 15, 11, 0.92);
+}
+
+.panel {
+  border-color: var(--bod-border);
+  background: linear-gradient(145deg, rgba(19, 31, 21, 0.97), rgba(12, 22, 14, 0.97));
+}
+
+.eyebrow,
+.panel-heading > a,
+.season-card__button,
+.match-card__details,
+.match-details__back,
+.dashboard-panel__header a {
+  color: var(--bod-gold);
+}
+
+.page-description,
+.profile-copy span,
+.brand span,
+.season-mini span,
+.season-mini small,
+.muted {
+  color: var(--bod-text-muted) !important;
+}
+
+.brand-logo {
+  border-color: rgba(245, 189, 22, 0.36);
+  box-shadow: 0 8px 26px rgba(201, 148, 20, 0.16);
+}
+
+.nav-link {
+  color: #9da493;
+}
+
+.nav-link:hover {
+  color: var(--bod-text);
+  background: rgba(83, 107, 34, 0.14);
+}
+
+.nav-link--active {
+  color: var(--bod-gold-bright);
+  border-color: rgba(245, 189, 22, 0.28);
+  background: rgba(201, 148, 20, 0.12);
+}
+
+.season-mini {
+  border-color: var(--bod-border);
+  background: var(--bod-surface);
+}
+
+.button {
+  color: #171304;
+  background: linear-gradient(135deg, var(--bod-gold-bright), var(--bod-gold));
+  box-shadow: 0 8px 22px rgba(201, 148, 20, 0.12);
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.button--secondary {
+  color: #d8ddcc;
+  border: 1px solid var(--bod-border-strong);
+  background: var(--bod-surface-soft);
+  box-shadow: none;
+}
+
+.logout-button {
+  color: #aeb5a4;
+  border-color: var(--bod-border-strong);
+}
+
+.logout-button:hover {
+  color: var(--bod-gold-bright);
+  border-color: var(--bod-gold-soft);
+}
+
+.toolbar input,
+.settings-form input,
+.crud-form input,
+.crud-form select,
+.crud-form textarea,
+.player-form input,
+.player-form select,
+.player-form textarea,
+.match-toolbar select,
+.user-card__player select,
+.auth-form input {
+  color: var(--bod-text);
+  border-color: var(--bod-border-strong);
+  background: #0a130c;
+}
+
+.toolbar input:focus,
+.settings-form input:focus,
+.crud-form input:focus,
+.crud-form select:focus,
+.crud-form textarea:focus,
+.player-form input:focus,
+.player-form select:focus,
+.player-form textarea:focus,
+.match-toolbar select:focus,
+.user-card__player select:focus,
+.auth-form input:focus {
+  border-color: var(--bod-gold);
+  box-shadow: 0 0 0 3px rgba(245, 189, 22, 0.08);
+}
+
+.filter-row button,
+.match-toolbar__filters button {
+  color: #a4ab99;
+  border-color: var(--bod-border-strong);
+}
+
+.filter-row button:hover,
+.match-toolbar__filters button:hover {
+  color: var(--bod-gold-bright);
+  border-color: var(--bod-gold-soft);
+}
+
+.filter-row button.active,
+.match-toolbar__filters button.active {
+  color: #171304;
+  border-color: var(--bod-gold);
+  background: var(--bod-gold);
+}
+
+.stat-card > span,
+.dashboard-summary-card > span {
+  color: var(--bod-gold-bright);
+  background: rgba(245, 189, 22, 0.1);
+}
+
+.stat-card::after,
+.dashboard-summary-card::after {
+  border-color: rgba(245, 189, 22, 0.1);
+}
+
+.quick-actions a,
+.result-row,
+.dashboard-list__item,
+.season-card__competition,
+.match-info-row,
+.match-event,
+.lineup-player {
+  border-color: var(--bod-border);
+  background: rgba(8, 16, 10, 0.48);
+}
+
+.quick-actions a:hover {
+  color: var(--bod-gold-bright);
+  border-color: rgba(245, 189, 22, 0.32);
+  background: rgba(201, 148, 20, 0.08);
+}
+
+.dashboard-brand-hero {
+  border-color: rgba(245, 189, 22, 0.3);
+}
+
+.position-badge,
+.season-statistics__competition-count,
+.match-card__competition,
+.match-details__competition {
+  color: var(--bod-gold-bright);
+  border-color: rgba(245, 189, 22, 0.3);
+  background: rgba(201, 148, 20, 0.1);
+}
+
+.player-avatar,
+.avatar {
+  color: #171304;
+  background: linear-gradient(135deg, var(--bod-gold-bright), var(--bod-gold-soft));
+}
+
+.player-meta span,
+.position-tag {
+  color: #e2cb75;
+  border-color: rgba(245, 189, 22, 0.28);
+  background: rgba(201, 148, 20, 0.09);
+}
+
+.season-card--active {
+  border-color: rgba(245, 189, 22, 0.42);
+}
+
+.season-card__button:hover,
+.match-card__details:hover,
+.panel-heading > a:hover {
+  color: var(--bod-gold-bright);
+}
+
+.status-pill {
+  color: #e8cf74;
+  background: rgba(201, 148, 20, 0.12);
+}
+
+.status-pill--success,
+.status-dot--active,
+.approval-pill--approved {
+  color: var(--bod-success);
+}
+
+.auth-card {
+  border-color: var(--bod-border);
+  background: rgba(13, 23, 16, 0.97);
+}
+
+.auth-tabs {
+  background: #080f0a;
+}
+
+.auth-tabs button.active {
+  color: #171304;
+  background: var(--bod-gold);
+}
+
+.google-button {
+  color: var(--bod-text);
+  border-color: var(--bod-border-strong);
+  background: var(--bod-surface-soft);
+}
+
+.google-button:hover:not(:disabled) {
+  border-color: var(--bod-gold-soft);
+  background: #1b281a;
+}
+
+.approval-pill {
+  color: #e8cf74;
+  background: rgba(201, 148, 20, 0.12);
+}
+
+.error-message,
+.approval-pill--rejected {
+  color: var(--bod-danger);
+}
+
+::selection {
+  color: #171304;
+  background: var(--bod-gold);
+}

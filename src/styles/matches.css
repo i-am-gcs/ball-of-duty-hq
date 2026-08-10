@@ -469,6 +469,21 @@
   color: #9af4d9;
 }
 
+.match-card__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.match-card__actions .button {
+  flex: 1;
+}
+
+.match-card__delete {
+  color: #ffaaaa;
+  background: rgba(194, 63, 63, 0.14);
+}
+
 /* MATCH DETAILS */
 
 .match-details-back-link {

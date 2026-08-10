@@ -1,13 +1,24 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader";
-import { matches } from "../data/matches";
+import { getMatchById } from "../services/matchService";
 
 function MatchDetails() {
   const { matchId } = useParams();
 
-  const selectedMatch = matches.find(
-    (match) => match.id === Number(matchId)
-  );
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getMatchById(matchId)
+      .then(setSelectedMatch)
+      .catch((error) => console.error("Hiba a mérkőzés betöltésekor:", error))
+      .finally(() => setLoading(false));
+  }, [matchId]);
+
+  if (loading) {
+    return <div className="page-stack"><section className="panel crud-state">Mérkőzés betöltése...</section></div>;
+  }
 
   if (!selectedMatch) {
     return (
@@ -29,8 +40,8 @@ function MatchDetails() {
     );
   }
 
-  const hasLineup = selectedMatch.lineup.length > 0;
-  const hasEvents = selectedMatch.events.length > 0;
+  const hasLineup = selectedMatch.lineup?.length > 0;
+  const hasEvents = selectedMatch.events?.length > 0;
 
   return (
     <div className="page-stack">

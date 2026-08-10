@@ -50,7 +50,9 @@ function getCompetitionText(competition) {
   };
 }
 
-function SeasonCard({ season }) {
+import { Link } from "react-router-dom";
+
+function SeasonCard({ season, onEdit, onDelete, deleting }) {
   const seasonWinner = season.awards?.seasonPlayerPodium?.find(
     (player) => player.placement === 1
   );
@@ -108,10 +110,13 @@ function SeasonCard({ season }) {
           </strong>
         </div>
 
-        <button className="season-card__button" type="button">
-          Részletek →
-        </button>
+        <Link className="season-card__button" to={`/seasons/${season.id}`}>Részletek →</Link>
       </footer>
+
+      {onEdit && onDelete && <div className="season-card__actions">
+        <button className="button button--secondary" type="button" onClick={() => onEdit(season)}>Szerkesztés</button>
+        <button className="button season-card__delete" type="button" disabled={deleting} onClick={() => onDelete(season)}>{deleting ? "Törlés..." : "Törlés"}</button>
+      </div>}
     </article>
   );
 }

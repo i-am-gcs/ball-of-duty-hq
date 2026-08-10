@@ -1,18 +1,24 @@
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const titles = {
   "/dashboard": "Dashboard",
   "/squad": "Játékoskeret",
+  "/profile": "Saját profilom",
   "/seasons": "Szezonok",
   "/voting": "Szavazások",
   "/benefits": "Benefit Tracker",
   "/statistics": "Statisztikák",
-  "/settings": "Beállítások"
+  "/settings": "Beállítások",
+  "/users": "Felhasználók",
 };
 
 function Header({ onMenuClick }) {
+  const { user, isAdmin, logout } = useAuth();
   const location = useLocation();
   const title = titles[location.pathname] ?? "Ball of Duty HQ";
+  const displayName = user?.displayName || user?.email || "Csapattag";
+  const initials = displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <header className="topbar">
@@ -24,11 +30,12 @@ function Header({ onMenuClick }) {
         <h1>{title}</h1>
       </div>
       <div className="profile-box">
-        <div className="avatar">GC</div>
+        <div className="avatar">{initials}</div>
         <div className="profile-copy">
-          <strong>IamGCS</strong>
-          <span>Club Manager</span>
+          <strong>{displayName}</strong>
+          <span>{isAdmin ? "Admin" : "Játékos"}</span>
         </div>
+        <button type="button" className="logout-button" onClick={logout}>Kilépés</button>
       </div>
     </header>
   );

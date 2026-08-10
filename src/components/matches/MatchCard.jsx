@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-function MatchCard({ match }) {
+function MatchCard({ match, onEdit, onDelete, deleting }) {
   const isBallOfDutyHome = match.homeTeam === "Ball of Duty";
 
   const ballOfDutyScore = isBallOfDutyHome
@@ -28,8 +28,8 @@ function MatchCard({ match }) {
     <article className="panel match-card">
       <div className="match-card__header">
         <div>
-          <span>{match.competitionName}</span>
-          <strong>{match.round}</strong>
+          <span>{match.competition}</span>
+          <strong>{match.stage}</strong>
         </div>
 
         <span
@@ -67,6 +67,10 @@ function MatchCard({ match }) {
           Részletek →
         </Link>
       </footer>
+      {onEdit && onDelete && <div className="match-card__actions">
+        <button className="button button--secondary" type="button" onClick={() => onEdit(match)}>Szerkesztés</button>
+        <button className="button match-card__delete" type="button" disabled={deleting} onClick={() => onDelete(match)}>{deleting ? "Törlés..." : "Törlés"}</button>
+      </div>}
     </article>
   );
 }
