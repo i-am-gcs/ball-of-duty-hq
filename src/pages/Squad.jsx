@@ -45,6 +45,45 @@ const positionOptions = [
   "ST",
 ];
 
+const positionGroups = [
+  {
+    key: "goalkeepers",
+    title: "Kapusok",
+    icon: "🧤",
+    positions: ["GK"],
+  },
+  {
+    key: "defenders",
+    title: "Védelem",
+    icon: "🛡️",
+    positions: ["LB", "CB", "RB"],
+  },
+  {
+    key: "midfielders",
+    title: "Középpálya",
+    icon: "⚙️",
+    positions: ["CDM", "CM", "LM", "RM", "CAM"],
+  },
+  {
+    key: "forwards",
+    title: "Csatárok",
+    icon: "⚡",
+    positions: ["ST"],
+  },
+];
+
+function getPlayerPosition(player) {
+  return player.primaryPosition || player.position || "";
+}
+
+function getPositionGroup(player) {
+  const position = getPlayerPosition(player);
+
+  return (
+    positionGroups.find((group) => group.positions.includes(position)) || null
+  );
+}
+
 function Squad() {
   const { isAdmin, profile } = useAuth();
 
@@ -69,6 +108,8 @@ function Squad() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadingAvatarId, setUploadingAvatarId] = useState(null);
 
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
   useEffect(() => {
     async function loadPlayers() {
       try {
@@ -89,6 +130,34 @@ function Squad() {
 
     loadPlayers();
   }, []);
+
+  useEffect(() => {
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setSelectedPlayer(null);
+      }
+    }
+
+    if (selectedPlayer) {
+      window.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [selectedPlayer]);
+
+  /*
+   * A Firebase players ágában technikai/admin rekord is lehet.
+   * A BoD Admin nem játékos, ezért a Squad minden további
+   * működéséből kiszűrjük.
+   */
+  const squadPlayers = useMemo(() => {
+    return players.filter(
+      (player) =>
+        player.nickname !== "BoD Admin" && player.name !== "BoD Admin",
+    );
+  }, [players]);
 
   function updatePlayerForm(event) {
     const { name, value } = event.target;
@@ -190,12 +259,12 @@ function Squad() {
     }
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setFormError("Csak JPG, PNG vagy WebP kep toltheto fel.");
+      setFormError("Csak JPG, PNG vagy WebP kép tölthető fel.");
       return;
     }
 
     if (file.size > 3 * 1024 * 1024) {
-      setFormError("A profilkep legfeljebb 3 MB lehet.");
+      setFormError("A profilkép legfeljebb 3 MB lehet.");
       return;
     }
 
@@ -230,10 +299,16 @@ function Squad() {
             : currentPlayer,
         ),
       );
-    } catch (error) {
-      console.error("Hiba a profilkep feltoltesekor:", error);
 
-      setActionError(error.message || "Nem sikerult feltolteni a profilkepet.");
+      setSelectedPlayer((currentPlayer) =>
+        currentPlayer?.id === player.id
+          ? { ...currentPlayer, ...avatar }
+          : currentPlayer,
+      );
+    } catch (error) {
+      console.error("Hiba a profilkép feltöltésekor:", error);
+
+      setActionError(error.message || "Nem sikerült feltölteni a profilképet.");
     } finally {
       setUploadingAvatarId(null);
     }
@@ -260,6 +335,10 @@ function Squad() {
         ),
       );
 
+      if (selectedPlayer?.id === player.id) {
+        setSelectedPlayer(null);
+      }
+
       if (editingPlayerId === player.id) {
         closePlayerForm();
       }
@@ -283,10 +362,8 @@ function Squad() {
       status: playerForm.status,
       preferredFoot: playerForm.preferredFoot,
       eaId: playerForm.eaId.trim(),
-
       discordName: playerForm.discordName.trim(),
       discordId: playerForm.discordId.trim(),
-
       joinedAt: playerForm.joinedAt,
       squadNumber: playerForm.squadNumber.trim(),
       role: playerForm.role,
@@ -344,6 +421,13 @@ function Squad() {
               : player,
           ),
         );
+
+        if (selectedPlayer?.id === editingPlayerId) {
+          setSelectedPlayer((currentPlayer) => ({
+            ...currentPlayer,
+            ...updatedPlayer,
+          }));
+        }
       } else {
         let createdPlayer = await createPlayer(playerData);
 
@@ -370,15 +454,15 @@ function Squad() {
   }
 
   const positions = useMemo(() => {
-    const playerPositions = players
+    const playerPositions = squadPlayers
       .map((player) => player.primaryPosition || player.position)
       .filter(Boolean);
 
     return ["Összes", ...new Set(playerPositions)];
-  }, [players]);
+  }, [squadPlayers]);
 
   const visiblePlayers = useMemo(() => {
-    return players.filter((player) => {
+    return squadPlayers.filter((player) => {
       const playerPosition = player.primaryPosition || player.position;
 
       const matchesPosition = filter === "Összes" || playerPosition === filter;
@@ -394,7 +478,16 @@ function Squad() {
 
       return matchesPosition && matchesSearch;
     });
-  }, [players, filter, search]);
+  }, [squadPlayers, filter, search]);
+
+  const groupedPlayers = useMemo(() => {
+    return positionGroups.map((group) => ({
+      ...group,
+      players: visiblePlayers.filter((player) =>
+        group.positions.includes(getPlayerPosition(player)),
+      ),
+    }));
+  }, [visiblePlayers]);
 
   if (loading) {
     return (
@@ -433,7 +526,7 @@ function Squad() {
       <PageHeader
         eyebrow="Squad management"
         title="Játékoskeret"
-        description="Keresés, pozíció szerinti szűrés és teljesítményadatok."
+        description="A Ball of Duty aktuális játékoskerete."
       />
 
       {isAdmin && (
@@ -717,6 +810,7 @@ function Squad() {
         <div className="filter-row">
           {positions.map((position) => (
             <button
+              type="button"
               key={position}
               className={filter === position ? "active" : ""}
               onClick={() => setFilter(position)}
@@ -736,132 +830,373 @@ function Squad() {
           <p>Nem található a feltételeknek megfelelő játékos.</p>
         </section>
       ) : (
-        <section className="player-grid">
-          {visiblePlayers.map((player) => {
-            const playerPosition = player.primaryPosition || player.position;
+        <div className="squad-position-groups">
+          {groupedPlayers.map((group) => {
+            if (group.players.length === 0) {
+              return null;
+            }
 
             return (
-              <article className="player-card panel" key={player.id}>
-                <div className="player-top">
-                  <span className="position-badge">
-                    {playerPosition || "N/A"}
+              <section className="squad-position-group" key={group.key}>
+                <div className="squad-position-group__header">
+                  <div>
+                    <span className="squad-position-group__icon">
+                      {group.icon}
+                    </span>
+
+                    <div>
+                      <p className="eyebrow">Játékoskeret</p>
+
+                      <h2>{group.title}</h2>
+                    </div>
+                  </div>
+
+                  <span className="squad-position-group__count">
+                    {group.players.length}
                   </span>
-
-                  <span
-                    className={`status-dot ${
-                      player.status === "Aktív" ? "status-dot--active" : ""
-                    }`}
-                  >
-                    {player.status}
-                  </span>
                 </div>
 
-                <div
-                  className={`player-avatar ${
-                    player.avatarUrl ? "player-avatar--image" : ""
-                  }`}
-                >
-                  {player.avatarUrl ? (
-                    <img
-                      src={player.avatarUrl}
-                      alt={`${player.nickname} profilképe`}
-                    />
-                  ) : (
-                    player.nickname?.slice(0, 2).toUpperCase()
-                  )}
+                <div className="player-grid">
+                  {group.players.map((player) => {
+                    const playerPosition = getPlayerPosition(player);
+
+                    return (
+                      <article
+                        className="player-card panel player-card--clickable"
+                        key={player.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedPlayer(player)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+
+                            setSelectedPlayer(player);
+                          }
+                        }}
+                      >
+                        <div className="player-top">
+                          <span className="position-badge">
+                            {playerPosition || "N/A"}
+                          </span>
+
+                          <span
+                            className={`status-dot ${
+                              player.status === "Aktív"
+                                ? "status-dot--active"
+                                : ""
+                            }`}
+                          >
+                            {player.status}
+                          </span>
+                        </div>
+
+                        <div
+                          className={`player-avatar ${
+                            player.avatarUrl ? "player-avatar--image" : ""
+                          }`}
+                        >
+                          {player.avatarUrl ? (
+                            <img
+                              src={player.avatarUrl}
+                              alt={`${player.nickname} profilképe`}
+                            />
+                          ) : (
+                            player.nickname?.slice(0, 2).toUpperCase()
+                          )}
+                        </div>
+
+                        {!isAdmin && profile?.playerId === player.id && (
+                          <label
+                            className="player-avatar-change"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {uploadingAvatarId === player.id
+                              ? "Feltöltés..."
+                              : "Profilkép cseréje"}
+
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              disabled={uploadingAvatarId === player.id}
+                              onChange={(event) =>
+                                changeOwnAvatar(player, event.target.files?.[0])
+                              }
+                            />
+                          </label>
+                        )}
+
+                        <h3>{player.nickname}</h3>
+
+                        <p>{player.name}</p>
+
+                        {(player.role ||
+                          player.secondaryPositions?.length > 0) && (
+                          <div className="player-meta">
+                            {player.role && <span>{player.role}</span>}
+
+                            {player.secondaryPositions?.length > 0 && (
+                              <span>
+                                Másodlagos:{" "}
+                                {player.secondaryPositions.join(", ")}
+                              </span>
+                            )}
+
+                            {isAdmin && (
+                              <span>
+                                {player.userId
+                                  ? "✓ Fiókkal összekötve"
+                                  : "Nincs felhasználói fió"}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="rating">
+                          <span>Overall</span>
+
+                          <strong>{player.rating ?? "–"}</strong>
+                        </div>
+
+                        <div className="player-stats">
+                          <div>
+                            <strong>{player.appearances ?? "–"}</strong>
+
+                            <span>Meccs</span>
+                          </div>
+
+                          <div>
+                            <strong>{player.goals ?? "–"}</strong>
+
+                            <span>Gól</span>
+                          </div>
+
+                          <div>
+                            <strong>{player.assists ?? "–"}</strong>
+
+                            <span>Gólpassz</span>
+                          </div>
+                        </div>
+
+                        <div className="player-card__click-hint">
+                          Profil megtekintése →
+                        </div>
+
+                        {isAdmin && (
+                          <div
+                            className="player-card__actions"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="button button--secondary"
+                              onClick={() => openEditPlayerForm(player)}
+                            >
+                              Szerkesztés
+                            </button>
+
+                            <button
+                              type="button"
+                              className="button player-card__delete"
+                              disabled={deletingPlayerId === player.id}
+                              onClick={() => removePlayer(player)}
+                            >
+                              {deletingPlayerId === player.id
+                                ? "Törlés..."
+                                : "Törlés"}
+                            </button>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
-
-                {!isAdmin && profile?.playerId === player.id && (
-                  <label className="player-avatar-change">
-                    {uploadingAvatarId === player.id
-                      ? "Feltöltés..."
-                      : "Profilkép cseréje"}
-
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      disabled={uploadingAvatarId === player.id}
-                      onChange={(event) =>
-                        changeOwnAvatar(player, event.target.files?.[0])
-                      }
-                    />
-                  </label>
-                )}
-
-                <h3>{player.nickname}</h3>
-
-                <p>{player.name}</p>
-
-                {(player.role || player.secondaryPositions?.length > 0) && (
-                  <div className="player-meta">
-                    {player.role && <span>{player.role}</span>}
-
-                    {player.secondaryPositions?.length > 0 && (
-                      <span>
-                        Másodlagos: {player.secondaryPositions.join(", ")}
-                      </span>
-                    )}
-
-                    {isAdmin && (
-                      <span>
-                        {player.userId
-                          ? "✓ Fiókkal összekötve"
-                          : "Nincs felhasználói fiók"}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <div className="rating">
-                  <span>Overall</span>
-
-                  <strong>{player.rating ?? "–"}</strong>
-                </div>
-
-                <div className="player-stats">
-                  <div>
-                    <strong>{player.appearances ?? "–"}</strong>
-
-                    <span>Meccs</span>
-                  </div>
-
-                  <div>
-                    <strong>{player.goals ?? "–"}</strong>
-
-                    <span>Gól</span>
-                  </div>
-
-                  <div>
-                    <strong>{player.assists ?? "–"}</strong>
-
-                    <span>Gólpassz</span>
-                  </div>
-                </div>
-
-                {isAdmin && (
-                  <div className="player-card__actions">
-                    <button
-                      type="button"
-                      className="button button--secondary"
-                      onClick={() => openEditPlayerForm(player)}
-                    >
-                      Szerkesztés
-                    </button>
-
-                    <button
-                      type="button"
-                      className="button player-card__delete"
-                      disabled={deletingPlayerId === player.id}
-                      onClick={() => removePlayer(player)}
-                    >
-                      {deletingPlayerId === player.id ? "Törlés..." : "Törlés"}
-                    </button>
-                  </div>
-                )}
-              </article>
+              </section>
             );
           })}
-        </section>
+        </div>
+      )}
+
+      {selectedPlayer && (
+        <div
+          className="player-profile-backdrop"
+          onClick={() => setSelectedPlayer(null)}
+        >
+          <section
+            className="player-profile-modal panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="player-profile-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="player-profile-modal__close"
+              onClick={() => setSelectedPlayer(null)}
+              aria-label="Profil bezárása"
+            >
+              ×
+            </button>
+
+            <div className="player-profile-modal__hero">
+              <div
+                className={`player-profile-modal__avatar ${
+                  selectedPlayer.avatarUrl
+                    ? "player-profile-modal__avatar--image"
+                    : ""
+                }`}
+              >
+                {selectedPlayer.avatarUrl ? (
+                  <img
+                    src={selectedPlayer.avatarUrl}
+                    alt={`${selectedPlayer.nickname} profilképe`}
+                  />
+                ) : (
+                  selectedPlayer.nickname?.slice(0, 2).toUpperCase()
+                )}
+              </div>
+
+              <div>
+                <span className="position-badge">
+                  {getPlayerPosition(selectedPlayer) || "N/A"}
+                </span>
+
+                <h2 id="player-profile-title">{selectedPlayer.nickname}</h2>
+
+                <p>{selectedPlayer.name}</p>
+
+                {getPositionGroup(selectedPlayer) && (
+                  <span className="player-profile-modal__group">
+                    {getPositionGroup(selectedPlayer).title}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="player-profile-modal__status">
+              <span
+                className={`status-dot ${
+                  selectedPlayer.status === "Aktív" ? "status-dot--active" : ""
+                }`}
+              >
+                {selectedPlayer.status}
+              </span>
+
+              {selectedPlayer.role && <span>{selectedPlayer.role}</span>}
+            </div>
+
+            <div className="player-profile-modal__details">
+              <div>
+                <span>Másodlagos pozíciók</span>
+
+                <strong>
+                  {selectedPlayer.secondaryPositions?.length
+                    ? selectedPlayer.secondaryPositions.join(" · ")
+                    : "–"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Preferált láb</span>
+
+                <strong>{selectedPlayer.preferredFoot || "–"}</strong>
+              </div>
+
+              <div>
+                <span>Mezszám</span>
+
+                <strong>{selectedPlayer.squadNumber || "–"}</strong>
+              </div>
+
+              <div>
+                <span>EA ID</span>
+
+                <strong>{selectedPlayer.eaId || "–"}</strong>
+              </div>
+
+              <div>
+                <span>Discord</span>
+
+                <strong>{selectedPlayer.discordName || "–"}</strong>
+              </div>
+
+              <div>
+                <span>Discord ID</span>
+
+                <strong className="player-profile-modal__value--small">
+                  {selectedPlayer.discordId || "–"}
+                </strong>
+              </div>
+            </div>
+
+            <div className="player-profile-modal__stats">
+              <div>
+                <strong>{selectedPlayer.rating ?? "–"}</strong>
+
+                <span>Overall</span>
+              </div>
+
+              <div>
+                <strong>{selectedPlayer.appearances ?? "–"}</strong>
+
+                <span>Meccs</span>
+              </div>
+
+              <div>
+                <strong>{selectedPlayer.goals ?? "–"}</strong>
+
+                <span>Gól</span>
+              </div>
+
+              <div>
+                <strong>{selectedPlayer.assists ?? "–"}</strong>
+
+                <span>Gólpassz</span>
+              </div>
+            </div>
+
+            {selectedPlayer.notes && (
+              <div className="player-profile-modal__bio">
+                <span>Megjegyzés</span>
+
+                <p>{selectedPlayer.notes}</p>
+              </div>
+            )}
+
+            {selectedPlayer.joinedAt && (
+              <div className="player-profile-modal__joined">
+                <span>Csatlakozott</span>
+
+                <strong>{selectedPlayer.joinedAt}</strong>
+              </div>
+            )}
+
+            <div className="player-profile-modal__footer">
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => setSelectedPlayer(null)}
+              >
+                Bezárás
+              </button>
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    const player = selectedPlayer;
+
+                    setSelectedPlayer(null);
+                    openEditPlayerForm(player);
+                  }}
+                >
+                  Játékos szerkesztése
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );
