@@ -37,6 +37,14 @@ async function getVotesByUser(poll) {
   return votesByUser;
 }
 
+function getPollAnswers(poll) {
+  return [...poll.answers.values()].map((answer) => ({
+    id: answer.id,
+    text: answer.text || "Névtelen válasz",
+    emoji: answer.emoji?.toString() || null,
+  }));
+}
+
 function serializePoll(message, category) {
   const { poll } = message;
 
@@ -99,7 +107,7 @@ function resolveVotesToPlayers(votesByUser, players) {
   return resolvedVotes;
 }
 
-function buildPlayerResults(votesByUser, players) {
+function buildPlayerResults(votesByUser, players, pollAnswers) {
   const playerResults = {};
 
   for (const player of players) {
@@ -108,8 +116,21 @@ function buildPlayerResults(votesByUser, players) {
     }
 
     const discordUserId = String(player.discordId).trim();
-
     const vote = votesByUser[discordUserId];
+
+    const answers = vote
+      ? vote.answerIds.map((answerId) => {
+          const answer = pollAnswers.find(
+            (pollAnswer) => pollAnswer.id === answerId,
+          );
+
+          return {
+            id: answerId,
+            text: answer?.text || "Ismeretlen válasz",
+            emoji: answer?.emoji || null,
+          };
+        })
+      : [];
 
     playerResults[player.id] = {
       playerId: player.id,
@@ -120,6 +141,7 @@ function buildPlayerResults(votesByUser, players) {
       status: vote ? "VOTED" : "NO_VOTE",
 
       answerIds: vote?.answerIds || [],
+      answers,
     };
   }
 
@@ -137,9 +159,11 @@ export async function syncPollMessage(message, category) {
 
   const players = await getPlayers();
 
+  const pollAnswers = getPollAnswers(message.poll);
+
   const resolvedVotes = resolveVotesToPlayers(votesByUser, players);
 
-  const playerResults = buildPlayerResults(votesByUser, players);
+  const playerResults = buildPlayerResults(votesByUser, players, pollAnswers);
 
   await Promise.all([
     database.ref(`discordPolls/${message.id}`).set(pollData),
