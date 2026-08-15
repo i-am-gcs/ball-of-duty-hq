@@ -18,6 +18,10 @@ const categoryConfig = {
   },
 };
 
+/* ==================================================
+   POLL HELPERS
+   ================================================== */
+
 function getClosingTime(poll) {
   const timestamp = Date.parse(
     poll.expiresAt || poll.syncedAt || poll.createdAt || "",
@@ -65,6 +69,10 @@ function timeLeft(closingTime, closed) {
     : `${minutes} perc van hátra`;
 }
 
+/* ==================================================
+   RESULTS
+   ================================================== */
+
 function getPlayerResults(results) {
   return Object.values(results?.playerResults || {});
 }
@@ -73,38 +81,181 @@ function getUnregisteredVoters(results) {
   return Object.values(results?.votes || {}).filter((vote) => !vote.matched);
 }
 
-function sortPlayersByVoteStatus(players) {
-  return [...players].sort((a, b) => {
-    const aVoted = a.status === "VOTED";
-    const bVoted = b.status === "VOTED";
+/* ==================================================
+   POLL DATE
+   ==================================================
 
-    // Szavazott játékosok kerüljenek előre
-    if (aVoted !== bVoted) {
-      return aVoted ? -1 : 1;
+   Elsőként a poll objektum dátummezőit nézzük.
+
+   Ha ezek nem léteznek, megpróbáljuk a kérdésből
+   kinyerni az MM.DD formátumot.
+
+   Példa:
+   "08.23 - Vasárnap - Edzés - 19:50"
+   */
+
+function getPollDate(poll) {
+  const directDate =
+    poll.date ||
+    poll.eventDate ||
+    poll.matchDate ||
+    poll.trainingDate ||
+    poll.kickoffDate;
+
+  if (directDate) {
+    const parsed = new Date(directDate);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().split("T")[0];
     }
 
-    // Azonos státuszon belül név szerint
+    /*
+     * Ha már YYYY-MM-DD formátumú
+     */
+    if (/^\d{4}-\d{2}-\d{2}$/.test(directDate)) {
+      return directDate;
+    }
+  }
+
+  /*
+   * Példa:
+   * 08.23
+   * 08. 23.
+   */
+  const text = poll.question || poll.title || "";
+
+  const match = text.match(/(\d{1,2})\.\s*(\d{1,2})\.?/);
+
+  if (!match) {
+    return null;
+  }
+
+  const month = Number(match[1]);
+
+  const day = Number(match[2]);
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  /*
+   * Normál esetben az aktuális év.
+   *
+   * Ez a mostani BoD rendszerben megfelelő,
+   * mert a pollok aktuális szezonhoz tartoznak.
+   */
+  const year = new Date().getFullYear();
+
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
+    2,
+    "0",
+  )}`;
+}
+
+/* ==================================================
+   ABSENCE HELPERS
+   ================================================== */
+
+function isPlayerAbsent(playerId, pollDate, absences) {
+  if (!playerId || !pollDate) {
+    return null;
+  }
+
+  const absence = absences.find(
+    (item) =>
+      item.playerId === playerId &&
+      pollDate >= item.startDate &&
+      pollDate <= item.endDate,
+  );
+
+  return absence || null;
+}
+
+/* ==================================================
+   SORT
+   ================================================== */
+
+function sortPlayersByVoteStatus(players) {
+  return [...players].sort((a, b) => {
+    const getPriority = (player) => {
+      if (player.status === "VOTED") {
+        return 0;
+      }
+
+      if (player.status === "ABSENT") {
+        return 1;
+      }
+
+      return 2;
+    };
+
+    const aPriority = getPriority(a);
+
+    const bPriority = getPriority(b);
+
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+
     const aName = a.nickname || a.name || "";
+
     const bName = b.nickname || b.name || "";
 
     return aName.localeCompare(bName, "hu");
   });
 }
 
-function PollPlayerResults({ poll, results, closed }) {
+/* ==================================================
+   PLAYER RESULTS
+   ================================================== */
+
+function PollPlayerResults({ poll, results, closed, absences }) {
   const playerResults = getPlayerResults(results);
 
   const unregisteredVoters = getUnregisteredVoters(results);
 
-  const votedPlayers = playerResults.filter(
+  const pollDate = getPollDate(poll);
+
+  /*
+   * Távollét státusz hozzáadása
+   */
+  const enrichedPlayers = playerResults.map((player) => {
+    const absence = isPlayerAbsent(player.playerId, pollDate, absences);
+
+    /*
+     * Csak a NO_VOTE játékost
+     * változtatjuk ABSENT státuszra.
+     *
+     * Ha valaki szavazott,
+     * akkor továbbra is
+     * "Szavazott" marad.
+     */
+    if (player.status === "NO_VOTE" && absence) {
+      return {
+        ...player,
+        status: "ABSENT",
+        absenceReason: absence.reason || "",
+        absenceStartDate: absence.startDate,
+        absenceEndDate: absence.endDate,
+      };
+    }
+
+    return player;
+  });
+
+  const votedPlayers = enrichedPlayers.filter(
     (player) => player.status === "VOTED",
   );
 
-  const noVotePlayers = playerResults.filter(
+  const absentPlayers = enrichedPlayers.filter(
+    (player) => player.status === "ABSENT",
+  );
+
+  const noVotePlayers = enrichedPlayers.filter(
     (player) => player.status === "NO_VOTE",
   );
 
-  const sortedPlayerResults = sortPlayersByVoteStatus(playerResults);
+  const sortedPlayerResults = sortPlayersByVoteStatus(enrichedPlayers);
 
   if (playerResults.length === 0 && unregisteredVoters.length === 0) {
     return (
@@ -118,29 +269,47 @@ function PollPlayerResults({ poll, results, closed }) {
 
   return (
     <div className="poll-player-results">
+      {/* =========================================
+          SUMMARY
+          ========================================= */}
+
       <div className="poll-player-results__summary">
         <div>
           <strong>{votedPlayers.length}</strong>
+
           <span>Szavazott</span>
         </div>
 
         <div>
+          <strong>{absentPlayers.length}</strong>
+
+          <span>Távolléten</span>
+        </div>
+
+        <div>
           <strong>{noVotePlayers.length}</strong>
+
           <span>{closed ? "Nem szavazott" : "Még nem szavazott"}</span>
         </div>
 
         {unregisteredVoters.length > 0 && (
           <div>
             <strong>{unregisteredVoters.length}</strong>
+
             <span>Nem regisztrált</span>
           </div>
         )}
       </div>
 
+      {/* =========================================
+          PLAYERS
+          ========================================= */}
+
       <div className="poll-player-results__list">
         <div className="poll-player-results__heading">
           <h4>Játékosok</h4>
-          <span>{playerResults.length}</span>
+
+          <span>{enrichedPlayers.length}</span>
         </div>
 
         {sortedPlayerResults.map((player) => (
@@ -148,7 +317,9 @@ function PollPlayerResults({ poll, results, closed }) {
             className={`poll-player-result ${
               player.status === "VOTED"
                 ? "poll-player-result--voted"
-                : "poll-player-result--no-vote"
+                : player.status === "ABSENT"
+                  ? "poll-player-result--absent"
+                  : "poll-player-result--no-vote"
             }`}
             key={player.playerId}
           >
@@ -182,6 +353,16 @@ function PollPlayerResults({ poll, results, closed }) {
                     ))}
                   </div>
                 </>
+              ) : player.status === "ABSENT" ? (
+                <div className="poll-player-result__absence">
+                  <span className="poll-player-result__status">
+                    ⚠ Távolléten
+                  </span>
+
+                  {player.absenceReason && (
+                    <small>{player.absenceReason}</small>
+                  )}
+                </div>
               ) : (
                 <span className="poll-player-result__status">
                   {closed ? "Nem szavazott" : "Még nem szavazott"}
@@ -191,6 +372,10 @@ function PollPlayerResults({ poll, results, closed }) {
           </div>
         ))}
       </div>
+
+      {/* =========================================
+          UNREGISTERED
+          ========================================= */}
 
       {unregisteredVoters.length > 0 && (
         <div className="poll-unregistered-voters">
@@ -218,7 +403,11 @@ function PollPlayerResults({ poll, results, closed }) {
   );
 }
 
-function PollCard({ poll, state, results, expanded, onToggle }) {
+/* ==================================================
+   POLL CARD
+   ================================================== */
+
+function PollCard({ poll, state, results, expanded, onToggle, absences }) {
   const totalVotes =
     poll.answers?.reduce((sum, answer) => sum + (answer.voteCount || 0), 0) ||
     0;
@@ -230,11 +419,33 @@ function PollCard({ poll, state, results, expanded, onToggle }) {
 
   const playerResults = getPlayerResults(results);
 
-  const votedCount = playerResults.filter(
+  const pollDate = getPollDate(poll);
+
+  /*
+   * Távollétes játékosok
+   */
+  const enrichedPlayers = playerResults.map((player) => {
+    const absence = isPlayerAbsent(player.playerId, pollDate, absences);
+
+    if (player.status === "NO_VOTE" && absence) {
+      return {
+        ...player,
+        status: "ABSENT",
+      };
+    }
+
+    return player;
+  });
+
+  const votedCount = enrichedPlayers.filter(
     (player) => player.status === "VOTED",
   ).length;
 
-  const noVoteCount = playerResults.filter(
+  const absentCount = enrichedPlayers.filter(
+    (player) => player.status === "ABSENT",
+  ).length;
+
+  const noVoteCount = enrichedPlayers.filter(
     (player) => player.status === "NO_VOTE",
   ).length;
 
@@ -319,6 +530,10 @@ function PollCard({ poll, state, results, expanded, onToggle }) {
           </span>
 
           <span>
+            <strong>{absentCount}</strong> távolléten
+          </span>
+
+          <span>
             <strong>{noVoteCount}</strong>{" "}
             {state.closed ? "nem szavazott" : "még nem szavazott"}
           </span>
@@ -342,6 +557,7 @@ function PollCard({ poll, state, results, expanded, onToggle }) {
           poll={poll}
           results={results}
           closed={state.closed}
+          absences={absences}
         />
       )}
 
@@ -354,9 +570,16 @@ function PollCard({ poll, state, results, expanded, onToggle }) {
   );
 }
 
+/* ==================================================
+   VOTING
+   ================================================== */
+
 function Voting() {
   const [polls, setPolls] = useState([]);
+
   const [pollResults, setPollResults] = useState({});
+
+  const [absences, setAbsences] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -368,25 +591,40 @@ function Voting() {
 
   const [expandedPolls, setExpandedPolls] = useState({});
 
+  /* ---------------------------------------------
+     CLOCK
+     --------------------------------------------- */
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
 
     return () => window.clearInterval(timer);
   }, []);
 
+  /* ---------------------------------------------
+     FIREBASE
+     --------------------------------------------- */
+
   useEffect(() => {
     const pollsRef = ref(database, "discordPolls");
 
     const resultsRef = ref(database, "discordPollResults");
 
+    const absencesRef = ref(database, "absences");
+
     let pollsLoaded = false;
     let resultsLoaded = false;
+    let absencesLoaded = false;
 
     const handleLoading = () => {
-      if (pollsLoaded && resultsLoaded) {
+      if (pollsLoaded && resultsLoaded && absencesLoaded) {
         setLoading(false);
       }
     };
+
+    /* -------------------------------------------
+       POLLS
+       ------------------------------------------- */
 
     const unsubscribePolls = onValue(
       pollsRef,
@@ -399,7 +637,9 @@ function Voting() {
           : [];
 
         setPolls(pollData);
+
         pollsLoaded = true;
+
         handleLoading();
       },
       () => {
@@ -409,13 +649,19 @@ function Voting() {
       },
     );
 
+    /* -------------------------------------------
+       RESULTS
+       ------------------------------------------- */
+
     const unsubscribeResults = onValue(
       resultsRef,
       (snapshot) => {
         const resultData = snapshot.exists() ? snapshot.val() : {};
 
         setPollResults(resultData);
+
         resultsLoaded = true;
+
         handleLoading();
       },
       (firebaseError) => {
@@ -427,11 +673,54 @@ function Voting() {
       },
     );
 
+    /* -------------------------------------------
+       ABSENCES
+       ------------------------------------------- */
+
+    const unsubscribeAbsences = onValue(
+      absencesRef,
+      (snapshot) => {
+        const absenceData = snapshot.exists()
+          ? Object.entries(snapshot.val()).map(([id, absence]) => ({
+              id,
+              ...absence,
+            }))
+          : [];
+
+        setAbsences(absenceData);
+
+        absencesLoaded = true;
+
+        handleLoading();
+      },
+      (firebaseError) => {
+        console.error("absences betöltési hiba:", firebaseError);
+
+        /*
+         * Ha az absences nem töltődik,
+         * ne törjük el a teljes Voting oldalt.
+         *
+         * Ilyenkor egyszerűen üres
+         * távolléti listával működik tovább.
+         */
+        setAbsences([]);
+
+        absencesLoaded = true;
+
+        handleLoading();
+      },
+    );
+
     return () => {
       unsubscribePolls();
       unsubscribeResults();
+      unsubscribeAbsences();
     };
   }, []);
+
+  /* ---------------------------------------------
+     EXPAND
+     --------------------------------------------- */
 
   function togglePollResults(pollId) {
     setExpandedPolls((current) => ({
@@ -439,6 +728,10 @@ function Voting() {
       [pollId]: !current[pollId],
     }));
   }
+
+  /* ---------------------------------------------
+     GROUPS
+     --------------------------------------------- */
 
   const pollGroups = useMemo(
     () =>
@@ -465,6 +758,10 @@ function Voting() {
   );
 
   const selectedPolls = pollGroups[category] || [];
+
+  /* ---------------------------------------------
+     RENDER
+     --------------------------------------------- */
 
   return (
     <div className="page-stack">
@@ -539,6 +836,7 @@ function Voting() {
                 poll={poll}
                 state={state}
                 results={pollResults[poll.id]}
+                absences={absences}
                 expanded={Boolean(expandedPolls[poll.id])}
                 onToggle={() => togglePollResults(poll.id)}
               />
