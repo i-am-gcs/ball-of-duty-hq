@@ -1,5 +1,20 @@
 import { database } from "./firebase.js";
 
+async function getPlayers() {
+  const snapshot = await database.ref("players").once("value");
+
+  if (!snapshot.exists()) {
+    return [];
+  }
+
+  const playersData = snapshot.val();
+
+  return Object.entries(playersData).map(([id, player]) => ({
+    id,
+    ...player,
+  }));
+}
+
 async function getVotesByUser(poll) {
   const votesByUser = {};
 
@@ -31,23 +46,57 @@ function serializePoll(message, category) {
     discordGuildId: message.guildId,
     category,
     question: poll.question.text || "Névtelen szavazás",
+
     answers: [...poll.answers.values()].map((answer) => ({
       id: answer.id,
       text: answer.text || "Névtelen válasz",
       emoji: answer.emoji?.toString() || null,
       voteCount: answer.voteCount,
     })),
+
     allowMultiselect: poll.allowMultiselect,
     expiresAt: poll.expiresAt?.toISOString() || null,
     resultsFinalized: poll.resultsFinalized,
+
     author: {
       discordUserId: message.author.id,
       username: message.author.username,
     },
+
     messageUrl: message.url,
     createdAt: message.createdAt.toISOString(),
     syncedAt: new Date().toISOString(),
   };
+}
+
+function resolveVotesToPlayers(votesByUser, players) {
+  const resolvedVotes = {};
+
+  for (const [discordUserId, vote] of Object.entries(votesByUser)) {
+    const player = players.find(
+      (player) =>
+        String(player.discordId).trim() === String(discordUserId).trim(),
+    );
+
+    resolvedVotes[discordUserId] = {
+      discordUserId,
+      username: vote.username,
+      answerIds: vote.answerIds,
+
+      playerId: player?.id || null,
+
+      player: player
+        ? {
+            name: player.name || null,
+            nickname: player.nickname || null,
+          }
+        : null,
+
+      matched: Boolean(player),
+    };
+  }
+
+  return resolvedVotes;
 }
 
 export async function syncPollMessage(message, category) {
@@ -57,13 +106,36 @@ export async function syncPollMessage(message, category) {
 
   const pollData = serializePoll(message, category);
   const votesByUser = await getVotesByUser(message.poll);
+  const players = await getPlayers();
+
+  const resolvedVotes = resolveVotesToPlayers(votesByUser, players);
 
   await Promise.all([
     database.ref(`discordPolls/${message.id}`).set(pollData),
+
     database.ref(`discordVotes/${message.id}`).set(votesByUser),
+
+    database.ref(`discordPollResults/${message.id}`).set({
+      pollId: message.id,
+      category,
+      resultsFinalized: pollData.resultsFinalized,
+      syncedAt: new Date().toISOString(),
+      votes: resolvedVotes,
+    }),
   ]);
 
+  const matchedCount = Object.values(resolvedVotes).filter(
+    (vote) => vote.matched,
+  ).length;
+
+  const unmatchedCount = Object.keys(resolvedVotes).length - matchedCount;
+
   console.log(`Szavazás szinkronizálva: ${pollData.question}`);
+
+  console.log(
+    `Játékosazonosítás: ${matchedCount} egyezés, ${unmatchedCount} ismeretlen Discord ID.`,
+  );
+
   return true;
 }
 
@@ -75,7 +147,10 @@ export async function syncRecentChannelPolls(channel, category) {
     try {
       await syncPollMessage(message, category);
     } catch (error) {
-      console.error(`Nem sikerült szinkronizálni a pollt (${message.id}):`, error);
+      console.error(
+        `Nem sikerült szinkronizálni a pollt (${message.id}):`,
+        error,
+      );
     }
   }
 

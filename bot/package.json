@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/config.js && node --check src/firebase.js && node --check src/pollSync.js && node --check scripts/makeAdmin.js",
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/firebase.js && node --check src/pollSync.js && node --check scripts/makeAdmin.js && node --check scripts/migrateDiscordIds.js",
     "make-admin": "node scripts/makeAdmin.js",
-    "delete-user": "node scripts/deleteUser.js"
+    "delete-user": "node scripts/deleteUser.js",
+    "migrate-discord-ids": "node scripts/migrateDiscordIds.js"
   },
   "dependencies": {
     "discord.js": "^14.27.0",
