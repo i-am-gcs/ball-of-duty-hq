@@ -322,3 +322,56 @@
     flex-direction: column;
   }
 }
+/* -------------------------------------------------- */
+/* PLAYER CARD ALIGNMENT                              */
+/* -------------------------------------------------- */
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* A felső rész legyen azonos magasságú */
+.player-top {
+  min-height: 28px;
+}
+
+/* Avatar mindig ugyanott és ugyanakkora */
+.player-avatar {
+  flex: 0 0 auto;
+}
+
+/* Név blokk azonos helyet kap */
+.player-card h3 {
+  min-height: 27px;
+}
+
+.player-card > p {
+  min-height: 22px;
+}
+
+/* A meta badge-eknek legyen fix helyük.
+   Ha egy játékosnak kevesebb adata van,
+   nem tolja feljebb az alatta lévő részeket. */
+.player-meta {
+  min-height: 57px;
+  align-content: flex-start;
+}
+
+/* Overall blokk */
+.rating {
+  min-height: 49px;
+  box-sizing: border-box;
+}
+
+/* Statisztikák */
+.player-stats {
+  min-height: 67px;
+  align-items: start;
+}
+
+/* Gombok mindig a kártya aljára kerülnek */
+.player-card__actions {
+  margin-top: auto;
+}

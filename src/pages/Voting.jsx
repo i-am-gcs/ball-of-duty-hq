@@ -29,8 +29,9 @@ function getClosingTime(poll) {
 function getPollState(poll, now) {
   const closingTime = getClosingTime(poll);
 
-  // A Discord tényleges lezárása az elsődleges.
-  const closed = Boolean(poll.resultsFinalized);
+  const closed =
+    Boolean(poll.resultsFinalized) ||
+    (closingTime !== null && closingTime <= now);
 
   const visible =
     !closed ||
@@ -42,17 +43,6 @@ function getPollState(poll, now) {
     visible,
     closingTime,
   };
-}
-
-function formatDate(value) {
-  if (!value) return "Nincs megadva";
-
-  return new Intl.DateTimeFormat("hu-HU", {
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 function timeLeft(closingTime, closed) {
@@ -67,6 +57,7 @@ function timeLeft(closingTime, closed) {
   }
 
   const hours = Math.floor(difference / 3_600_000);
+
   const minutes = Math.max(1, Math.ceil((difference % 3_600_000) / 60_000));
 
   return hours > 0
@@ -74,7 +65,140 @@ function timeLeft(closingTime, closed) {
     : `${minutes} perc van hátra`;
 }
 
-function PollCard({ poll, state }) {
+function getPlayerResults(results) {
+  return Object.values(results?.playerResults || {});
+}
+
+function getUnregisteredVoters(results) {
+  return Object.values(results?.votes || {}).filter((vote) => !vote.matched);
+}
+
+function PollPlayerResults({ poll, results, closed }) {
+  const playerResults = getPlayerResults(results);
+
+  const unregisteredVoters = getUnregisteredVoters(results);
+
+  const votedPlayers = playerResults.filter(
+    (player) => player.status === "VOTED",
+  );
+
+  const noVotePlayers = playerResults.filter(
+    (player) => player.status === "NO_VOTE",
+  );
+
+  if (playerResults.length === 0 && unregisteredVoters.length === 0) {
+    return (
+      <div className="poll-player-results">
+        <p className="poll-player-results__empty">
+          A játékoseredmények még nem érhetők el.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="poll-player-results">
+      <div className="poll-player-results__summary">
+        <div>
+          <strong>{votedPlayers.length}</strong>
+          <span>Szavazott</span>
+        </div>
+
+        <div>
+          <strong>{noVotePlayers.length}</strong>
+          <span>{closed ? "Nem szavazott" : "Még nem szavazott"}</span>
+        </div>
+
+        {unregisteredVoters.length > 0 && (
+          <div>
+            <strong>{unregisteredVoters.length}</strong>
+            <span>Nem regisztrált</span>
+          </div>
+        )}
+      </div>
+
+      <div className="poll-player-results__list">
+        <div className="poll-player-results__heading">
+          <h4>Játékosok</h4>
+          <span>{playerResults.length}</span>
+        </div>
+
+        {playerResults.map((player) => (
+          <div
+            className={`poll-player-result ${
+              player.status === "VOTED"
+                ? "poll-player-result--voted"
+                : "poll-player-result--no-vote"
+            }`}
+            key={player.playerId}
+          >
+            <div className="poll-player-result__identity">
+              <strong>
+                {player.nickname || player.name || "Ismeretlen játékos"}
+              </strong>
+
+              {player.name &&
+                player.nickname &&
+                player.name !== player.nickname && <small>{player.name}</small>}
+            </div>
+
+            <div className="poll-player-result__vote">
+              {player.status === "VOTED" ? (
+                <>
+                  <span className="poll-player-result__status">
+                    ✓ Szavazott
+                  </span>
+
+                  <div className="poll-player-result__answers">
+                    {(player.answers || []).map((answer) => (
+                      <span
+                        className="poll-player-result__answer"
+                        key={answer.id}
+                      >
+                        {answer.emoji && <span>{answer.emoji}</span>}
+
+                        {answer.text}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <span className="poll-player-result__status">
+                  {closed ? "Nem szavazott" : "Még nem szavazott"}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {unregisteredVoters.length > 0 && (
+        <div className="poll-unregistered-voters">
+          <div className="poll-player-results__heading">
+            <h4>Nem regisztrált Discord szavazók</h4>
+
+            <span>{unregisteredVoters.length}</span>
+          </div>
+
+          <div className="poll-unregistered-voters__list">
+            {unregisteredVoters.map((voter) => (
+              <div
+                className="poll-unregistered-voter"
+                key={voter.discordUserId}
+              >
+                <span>{voter.username}</span>
+
+                <small>{voter.discordUserId}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PollCard({ poll, state, results, expanded, onToggle }) {
   const totalVotes =
     poll.answers?.reduce((sum, answer) => sum + (answer.voteCount || 0), 0) ||
     0;
@@ -83,6 +207,16 @@ function PollCard({ poll, state }) {
     0,
     ...(poll.answers || []).map((answer) => answer.voteCount || 0),
   );
+
+  const playerResults = getPlayerResults(results);
+
+  const votedCount = playerResults.filter(
+    (player) => player.status === "VOTED",
+  ).length;
+
+  const noVoteCount = playerResults.filter(
+    (player) => player.status === "NO_VOTE",
+  ).length;
 
   return (
     <article
@@ -134,7 +268,11 @@ function PollCard({ poll, state }) {
               </div>
 
               <div className="poll-answer__bar">
-                <span style={{ width: `${percentage}%` }} />
+                <span
+                  style={{
+                    width: `${percentage}%`,
+                  }}
+                />
               </div>
             </div>
           );
@@ -154,6 +292,39 @@ function PollCard({ poll, state }) {
         </a>
       </div>
 
+      {results && (
+        <div className="discord-poll__player-summary">
+          <span>
+            <strong>{votedCount}</strong> szavazott
+          </span>
+
+          <span>
+            <strong>{noVoteCount}</strong>{" "}
+            {state.closed ? "nem szavazott" : "még nem szavazott"}
+          </span>
+        </div>
+      )}
+
+      {results && (
+        <button
+          type="button"
+          className="button button--secondary poll-results-toggle"
+          onClick={onToggle}
+        >
+          {expanded
+            ? "Játékoseredmények elrejtése"
+            : "Játékoseredmények megjelenítése"}
+        </button>
+      )}
+
+      {expanded && results && (
+        <PollPlayerResults
+          poll={poll}
+          results={results}
+          closed={state.closed}
+        />
+      )}
+
       {state.closed && (
         <p className="discord-poll__expiry">
           A lezárástól számítva 24 óráig látható.
@@ -165,10 +336,17 @@ function PollCard({ poll, state }) {
 
 function Voting() {
   const [polls, setPolls] = useState([]);
+  const [pollResults, setPollResults] = useState({});
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
+
   const [category, setCategory] = useState("training");
+
   const [now, setNow] = useState(Date.now());
+
+  const [expandedPolls, setExpandedPolls] = useState({});
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -176,28 +354,69 @@ function Voting() {
     return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(
-    () =>
-      onValue(
-        ref(database, "discordPolls"),
-        (snapshot) => {
-          const pollData = snapshot.exists()
-            ? Object.entries(snapshot.val()).map(([id, poll]) => ({
-                id,
-                ...poll,
-              }))
-            : [];
+  useEffect(() => {
+    const pollsRef = ref(database, "discordPolls");
 
-          setPolls(pollData);
-          setLoading(false);
-        },
-        () => {
-          setError("Nem sikerült betölteni a Discord-szavazásokat.");
-          setLoading(false);
-        },
-      ),
-    [],
-  );
+    const resultsRef = ref(database, "discordPollResults");
+
+    let pollsLoaded = false;
+    let resultsLoaded = false;
+
+    const handleLoading = () => {
+      if (pollsLoaded && resultsLoaded) {
+        setLoading(false);
+      }
+    };
+
+    const unsubscribePolls = onValue(
+      pollsRef,
+      (snapshot) => {
+        const pollData = snapshot.exists()
+          ? Object.entries(snapshot.val()).map(([id, poll]) => ({
+              id,
+              ...poll,
+            }))
+          : [];
+
+        setPolls(pollData);
+        pollsLoaded = true;
+        handleLoading();
+      },
+      () => {
+        setError("Nem sikerült betölteni a Discord-szavazásokat.");
+
+        setLoading(false);
+      },
+    );
+
+    const unsubscribeResults = onValue(
+      resultsRef,
+      (snapshot) => {
+        const resultData = snapshot.exists() ? snapshot.val() : {};
+
+        setPollResults(resultData);
+        resultsLoaded = true;
+        handleLoading();
+      },
+      () => {
+        setError("Nem sikerült betölteni a szavazási eredményeket.");
+
+        setLoading(false);
+      },
+    );
+
+    return () => {
+      unsubscribePolls();
+      unsubscribeResults();
+    };
+  }, []);
+
+  function togglePollResults(pollId) {
+    setExpandedPolls((current) => ({
+      ...current,
+      [pollId]: !current[pollId],
+    }));
+  }
 
   const pollGroups = useMemo(
     () =>
@@ -251,6 +470,7 @@ function Voting() {
 
             <span>
               <strong>{config.label}</strong>
+
               <small>{pollGroups[key].length} látható</small>
             </span>
           </button>
@@ -292,7 +512,14 @@ function Voting() {
         {!loading && !error && selectedPolls.length > 0 && (
           <div className="discord-poll-grid">
             {selectedPolls.map(({ poll, state }) => (
-              <PollCard key={poll.id} poll={poll} state={state} />
+              <PollCard
+                key={poll.id}
+                poll={poll}
+                state={state}
+                results={pollResults[poll.id]}
+                expanded={Boolean(expandedPolls[poll.id])}
+                onToggle={() => togglePollResults(poll.id)}
+              />
             ))}
           </div>
         )}
