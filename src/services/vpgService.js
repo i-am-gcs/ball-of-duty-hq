@@ -19,7 +19,7 @@ function getVpgLogoUrl(logoId) {
 
 async function fetchVpgMatches({
   status = "scheduled",
-  limit = 100,
+  limit = 128,
   offset = 0,
 } = {}) {
   const params = new URLSearchParams({
@@ -29,7 +29,7 @@ async function fetchVpgMatches({
   });
 
   const response = await fetch(
-    `${VPG_API_BASE}/teams/${BOD_TEAM_SLUG}/matches?${params}`,
+    `${VPG_API_BASE}/teams/${BOD_TEAM_SLUG}/matches/?${params}`,
   );
 
   if (!response.ok) {
@@ -50,7 +50,7 @@ async function fetchVpgMatches({
 export async function getUpcomingVpgMatches() {
   const data = await fetchVpgMatches({
     status: "scheduled",
-    limit: 100,
+    limit: 128,
     offset: 0,
   });
 

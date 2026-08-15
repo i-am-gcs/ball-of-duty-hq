@@ -530,4 +530,669 @@
 .season-statistics__item:nth-child(8) strong {
   color: #66e0bc;
 }
+/* ==================================================
+   SEASON DETAILS
+   ================================================== */
 
+.season-details__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.season-details__hero h2 {
+  margin: 8px 0 4px;
+}
+
+.season-details__back {
+  color: #8fa6ad;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.season-details__back:hover {
+  color: #61e1bc;
+}
+
+.season-details__period {
+  margin: 0;
+  color: #8fa6ad;
+}
+
+.season-details__competitions {
+  display: grid;
+  gap: 18px;
+}
+
+.season-details__competition {
+  padding: 22px;
+}
+
+.season-details__competition-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.season-details__competition-header h3 {
+  margin: 6px 0;
+}
+
+.season-details__competition-header p {
+  margin: 0;
+  color: #8fa6ad;
+}
+
+.season-details__placement {
+  display: grid;
+  min-width: 90px;
+  text-align: center;
+}
+
+.season-details__placement span {
+  color: #738a91;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.season-details__placement strong {
+  color: #f2bb1f;
+  font-size: 30px;
+}
+
+.season-details__stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #203840;
+}
+
+.season-details__stats div {
+  display: grid;
+  gap: 4px;
+}
+
+.season-details__stats strong {
+  color: #edf7f4;
+  font-size: 20px;
+}
+
+.season-details__stats span {
+  color: #738a91;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.season-stat--win {
+  color: #61e1bc !important;
+}
+
+.season-stat--loss {
+  color: #ff8f8f !important;
+}
+
+.season-details__cup-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #203840;
+}
+
+.season-details__cup-result span {
+  color: #8fa6ad;
+}
+
+.season-details__cup-result strong {
+  color: #edf7f4;
+  font-size: 20px;
+}
+
+.season-details__cup-result small {
+  color: #738a91;
+}
+
+.season-details__standings {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #203840;
+}
+
+.season-details__standings h4 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.season-details__standings-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0 4px;
+  color: #738a91;
+}
+
+.season-details__standings-empty span {
+  font-size: 24px;
+}
+
+.season-details__standings-empty p {
+  margin: 0;
+}
+
+.season-details__podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.season-details__podium-player {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border: 1px solid #203840;
+  border-radius: 12px;
+  background: rgba(9, 25, 30, 0.55);
+}
+
+.season-details__podium-player span {
+  font-size: 24px;
+}
+
+.season-details__podium-player strong {
+  font-size: 17px;
+}
+
+.season-details__podium-player small {
+  color: #738a91;
+}
+
+.season-details__milestones {
+  display: grid;
+  gap: 10px;
+}
+
+.season-details__milestone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.season-details__milestone span {
+  color: #61e1bc;
+  font-weight: 900;
+}
+
+.season-details__milestone p {
+  margin: 0;
+  color: #a9bec3;
+}
+
+@media (max-width: 800px) {
+  .season-details__stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .season-details__podium {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .season-details__hero {
+    flex-direction: column;
+  }
+
+  .season-details__competition-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .season-details__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .season-details__cup-result {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+.season-card__stats {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #203840;
+}
+
+.season-card__stats-title {
+  display: block;
+  margin-bottom: 12px;
+  color: #738a91;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.season-card__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.season-card__stats-grid > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 62px;
+  padding: 10px 6px;
+
+  border: 1px solid #203840;
+  border-radius: 10px;
+  background: rgba(8, 24, 28, 0.45);
+}
+
+.season-card__stats-grid strong {
+  color: #edf7f4;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.season-card__stats-grid span {
+  margin-top: 6px;
+  color: #738a91;
+  font-size: 9px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.season-stat--win {
+  color: #61e1bc !important;
+}
+
+.season-stat--loss {
+  color: #ff8f8f !important;
+}
+@media (max-width: 600px) {
+  .season-card__stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+/* ==================================================
+   VPG SEASON STANDINGS
+   ================================================== */
+
+.season-details__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 16px;
+  border: 1px solid #203840;
+  border-radius: 12px;
+}
+
+.season-details__table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.season-details__table th {
+  padding: 12px 10px;
+  color: #738a91;
+  background: rgba(8, 24, 28, 0.7);
+  border-bottom: 1px solid #203840;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.season-details__table th:nth-child(2) {
+  text-align: left;
+}
+
+.season-details__table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(32, 56, 64, 0.65);
+
+  color: #a9bec3;
+  text-align: center;
+}
+
+.season-details__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* --------------------------------------------------
+   Team column
+   -------------------------------------------------- */
+
+.season-details__table td:nth-child(2) {
+  text-align: left;
+}
+
+.season-details__team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 220px;
+}
+
+.season-details__team img {
+  width: 30px;
+  height: 30px;
+
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.season-details__team span {
+  color: #edf7f4;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------
+   Position
+   -------------------------------------------------- */
+
+.season-details__table td:first-child {
+  width: 45px;
+  color: #738a91;
+}
+
+.season-details__table td:first-child strong {
+  color: #a9bec3;
+}
+
+/* --------------------------------------------------
+   Points
+   -------------------------------------------------- */
+
+.season-details__table td:last-child {
+  color: #edf7f4;
+}
+
+.season-details__table td:last-child strong {
+  font-size: 15px;
+}
+
+/* --------------------------------------------------
+   Ball of Duty row
+   -------------------------------------------------- */
+
+.season-details__table-row--bod {
+  background: rgba(97, 225, 188, 0.08);
+}
+
+.season-details__table-row--bod td {
+  border-bottom-color: rgba(97, 225, 188, 0.2);
+}
+
+.season-details__table-row--bod td:first-child strong {
+  color: #61e1bc;
+}
+
+.season-details__table-row--bod .season-details__team span {
+  color: #61e1bc;
+}
+
+.season-details__table-row--bod td:last-child strong {
+  color: #61e1bc;
+}
+
+/* --------------------------------------------------
+   Hover
+   -------------------------------------------------- */
+
+.season-details__table tbody tr:not(.season-details__table-row--bod):hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* ==================================================
+   VPG STANDINGS EMPTY / LOADING
+   ================================================== */
+
+.season-details__standings-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-height: 100px;
+  padding: 20px;
+
+  color: #738a91;
+  border: 1px solid #203840;
+  border-radius: 12px;
+  background: rgba(8, 24, 28, 0.45);
+}
+
+.season-details__standings-empty span {
+  font-size: 24px;
+}
+
+.season-details__standings-empty p {
+  margin: 0;
+}
+
+/* ==================================================
+   SEASON DETAILS - STATS
+   ================================================== */
+
+.season-details__stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border-top: 1px solid #203840;
+}
+
+.season-details__stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 62px;
+  padding: 10px 6px;
+
+  border: 1px solid #203840;
+  border-radius: 10px;
+  background: rgba(8, 24, 28, 0.45);
+}
+
+.season-details__stats strong {
+  color: #edf7f4;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.season-details__stats span {
+  margin-top: 6px;
+
+  color: #738a91;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+/* ==================================================
+   SEASON DETAILS - COMPETITION
+   ================================================== */
+
+.season-details__competition {
+  padding: 22px;
+}
+
+.season-details__competition-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.season-details__competition-header h3 {
+  margin: 6px 0;
+}
+
+.season-details__competition-header p {
+  margin: 0;
+  color: #8fa6ad;
+}
+
+.season-details__placement {
+  display: grid;
+  min-width: 100px;
+
+  text-align: center;
+}
+
+.season-details__placement span {
+  color: #738a91;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.season-details__placement strong {
+  color: #f2bb1f;
+  font-size: 30px;
+}
+
+/* ==================================================
+   CUP RESULT
+   ================================================== */
+
+.season-details__cup-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border-top: 1px solid #203840;
+}
+
+.season-details__cup-result span {
+  color: #8fa6ad;
+}
+
+.season-details__cup-result strong {
+  color: #edf7f4;
+  font-size: 20px;
+}
+
+.season-details__cup-result small {
+  color: #738a91;
+}
+
+/* ==================================================
+   PODIUM
+   ================================================== */
+
+.season-details__podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.season-details__podium-player {
+  display: grid;
+  gap: 5px;
+
+  padding: 18px;
+
+  border: 1px solid #203840;
+  border-radius: 12px;
+
+  background: rgba(9, 25, 30, 0.55);
+}
+
+.season-details__podium-player span {
+  font-size: 24px;
+}
+
+.season-details__podium-player strong {
+  font-size: 17px;
+}
+
+.season-details__podium-player small {
+  color: #738a91;
+}
+
+/* ==================================================
+   MILESTONES
+   ================================================== */
+
+.season-details__milestones {
+  display: grid;
+  gap: 10px;
+}
+
+.season-details__milestone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.season-details__milestone span {
+  color: #61e1bc;
+  font-weight: 900;
+}
+
+.season-details__milestone p {
+  margin: 0;
+  color: #a9bec3;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 900px) {
+  .season-details__stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .season-details__competition-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .season-details__placement {
+    text-align: left;
+  }
+
+  .season-details__podium {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .season-details__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .season-details__cup-result {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .season-details__table {
+    min-width: 680px;
+  }
+}
