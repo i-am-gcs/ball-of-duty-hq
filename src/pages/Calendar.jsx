@@ -8,6 +8,7 @@ import {
   updateAbsence,
 } from "../services/absenceService";
 import { getPlayers } from "../services/playerService";
+import AdminAbsencePanel from "../components/calendar/AdminAbsencePanel";
 
 import "../styles/calendar.css";
 import "../styles/admin-absence.css";
@@ -55,14 +56,6 @@ function formatDisplayDate(dateString) {
 
 function isDateInRange(dateString, startDate, endDate) {
   return dateString >= startDate && dateString <= endDate;
-}
-
-function getDays(startDate, endDate) {
-  const start = new Date(`${startDate}T00:00:00`);
-
-  const end = new Date(`${endDate}T00:00:00`);
-
-  return Math.round((end - start) / 86400000) + 1;
 }
 
 function Calendar() {
@@ -436,6 +429,23 @@ function Calendar() {
   }
 
   /* ---------------------------------------------
+     ADMIN ABSENCE UPDATE
+     --------------------------------------------- */
+
+  function handleAdminAbsenceUpdated(updated) {
+    setAbsences((current) =>
+      current.map((absence) =>
+        absence.id === updated.id
+          ? {
+              ...absence,
+              ...updated,
+            }
+          : absence,
+      ),
+    );
+  }
+
+  /* ---------------------------------------------
      RENDER
      --------------------------------------------- */
 
@@ -604,189 +614,11 @@ function Calendar() {
           ========================================= */}
 
       {isAdmin && (
-        <section className="admin-absence-panel">
-          <div className="admin-absence-panel__header">
-            <div>
-              <span className="section-kicker">ADMIN</span>
-
-              <h2>Csapat távollétek</h2>
-
-              <p>Az összes játékos előre jelzett távolléte egy helyen.</p>
-            </div>
-
-            <div className="admin-absence-panel__count">
-              <strong>{enrichedAbsences.length}</strong>
-
-              <span>bejelentett távollét</span>
-            </div>
-          </div>
-
-          <div className="admin-absence-panel__content">
-            {/* ===================================
-                SELECTED DAY
-                =================================== */}
-
-            <div className="admin-absence-panel__calendar">
-              <div className="admin-absence-panel__calendar-header">
-                <div>
-                  <span className="section-kicker">NAP ELLENŐRZÉSE</span>
-
-                  <h3>Kik hiányoznak?</h3>
-                </div>
-
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(event) => setSelectedDate(event.target.value)}
-                />
-              </div>
-
-              {!selectedDate ? (
-                <div className="admin-absence-panel__empty">
-                  <span>📅</span>
-
-                  <strong>Válassz ki egy napot</strong>
-
-                  <p>
-                    Megmutatjuk, kik jelezték előre, hogy az adott napon nem
-                    elérhetők.
-                  </p>
-                </div>
-              ) : (
-                <div className="admin-day-result">
-                  <div className="admin-day-result__header">
-                    <div>
-                      <span className="section-kicker">KIVÁLASZTOTT NAP</span>
-
-                      <h3>{formatDisplayDate(selectedDate)}</h3>
-                    </div>
-
-                    <div className="admin-day-result__count">
-                      {selectedDayAbsences.length}
-                    </div>
-                  </div>
-
-                  {selectedDayAbsences.length === 0 ? (
-                    <div className="admin-day-result__available">
-                      ✓ Nincs bejelentett távollét
-                    </div>
-                  ) : (
-                    <div className="admin-day-result__players">
-                      {selectedDayAbsences.map((absence) => {
-                        const player = absence.player;
-
-                        const playerName =
-                          player?.nickname ||
-                          player?.name ||
-                          "Ismeretlen játékos";
-
-                        return (
-                          <div
-                            key={absence.id}
-                            className="admin-absence-player"
-                          >
-                            <div className="admin-absence-player__avatar">
-                              {player?.avatarUrl ? (
-                                <img src={player.avatarUrl} alt="" />
-                              ) : (
-                                playerName.charAt(0).toUpperCase()
-                              )}
-                            </div>
-
-                            <div className="admin-absence-player__info">
-                              <strong>{playerName}</strong>
-
-                              <span>
-                                {formatDisplayDate(absence.startDate)} –{" "}
-                                {formatDisplayDate(absence.endDate)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* ===================================
-                UPCOMING ABSENCES
-                =================================== */}
-
-            <div className="admin-absence-panel__list">
-              <div className="admin-absence-panel__list-header">
-                <div>
-                  <span className="section-kicker">KÖVETKEZŐ IDŐSZAKOK</span>
-
-                  <h3>Bejelentett távollétek</h3>
-                </div>
-
-                <span className="admin-absence-panel__list-count">
-                  {upcomingAbsences.length}
-                </span>
-              </div>
-
-              {upcomingAbsences.length === 0 ? (
-                <div className="admin-absence-panel__empty">
-                  <span>✓</span>
-
-                  <strong>Nincs bejelentett távollét</strong>
-
-                  <p>Jelenleg nincs előre jelzett távollét.</p>
-                </div>
-              ) : (
-                <div className="admin-absence-list">
-                  {upcomingAbsences.map((absence) => {
-                    const player = absence.player;
-
-                    const playerName =
-                      player?.nickname || player?.name || "Ismeretlen játékos";
-
-                    return (
-                      <div key={absence.id} className="admin-absence-row">
-                        <div className="admin-absence-row__player">
-                          <div className="admin-absence-row__avatar">
-                            {player?.avatarUrl ? (
-                              <img src={player.avatarUrl} alt="" />
-                            ) : (
-                              playerName.charAt(0).toUpperCase()
-                            )}
-                          </div>
-
-                          <div>
-                            <strong>{playerName}</strong>
-
-                            {player?.name &&
-                              player.nickname !== player.name && (
-                                <span>{player.name}</span>
-                              )}
-                          </div>
-                        </div>
-
-                        <div className="admin-absence-row__dates">
-                          <strong>
-                            {formatDisplayDate(absence.startDate)}
-                          </strong>
-
-                          <span>{formatDisplayDate(absence.endDate)}</span>
-                        </div>
-
-                        <div className="admin-absence-row__days">
-                          <strong>
-                            {getDays(absence.startDate, absence.endDate)}
-                          </strong>
-
-                          <span>nap</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+        <AdminAbsencePanel
+          absences={absences}
+          players={players}
+          onAbsenceUpdated={handleAdminAbsenceUpdated}
+        />
       )}
 
       {/* =========================================

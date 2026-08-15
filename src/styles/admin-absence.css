@@ -458,3 +458,87 @@
     flex-direction: column;
   }
 }
+/* --------------------------------------------------
+   ADMIN ABSENCE REASON
+   -------------------------------------------------- */
+
+.admin-absence-row {
+  grid-template-columns:
+    minmax(170px, 1fr)
+    minmax(160px, 1fr)
+    55px
+    minmax(180px, 1.2fr);
+}
+
+.admin-absence-row__reason {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-absence-row__reason-label {
+  color: #738a91;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-absence-row__reason-value {
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #a9bec3;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-absence-row__reason-value:hover {
+  border-color: #29434b;
+  color: #edf7f4;
+  background: rgba(97, 225, 188, 0.05);
+}
+
+.admin-absence-row__reason-edit {
+  display: grid;
+  gap: 7px;
+}
+
+.admin-absence-row__reason-edit input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 9px;
+
+  border: 1px solid #29434b;
+  border-radius: 7px;
+
+  outline: none;
+
+  color: #edf7f4;
+  background: #09191e;
+
+  font: inherit;
+  font-size: 12px;
+}
+
+.admin-absence-row__reason-edit input:focus {
+  border-color: #4dd9b3;
+}
+
+.admin-absence-row__reason-edit > div {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-absence-row__reason-edit .button {
+  padding: 6px 9px;
+  font-size: 10px;
+}
+
+.admin-absence-player__info small {
+  margin-top: 2px;
+  color: #f2bb1f;
+  font-size: 10px;
+}

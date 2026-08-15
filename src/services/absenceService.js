@@ -51,3 +51,13 @@ export async function updateAbsence(absenceId, absenceData) {
 export async function deleteAbsence(absenceId) {
   await remove(ref(database, `${ABSENCES_PATH}/${absenceId}`));
 }
+export async function updateAbsenceReason(absenceId, reason) {
+  await update(ref(database, `${ABSENCES_PATH}/${absenceId}`), {
+    reason: reason.trim(),
+  });
+
+  return {
+    id: absenceId,
+    reason: reason.trim(),
+  };
+}
