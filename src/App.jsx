@@ -16,6 +16,7 @@ import AdminRoute from "./components/auth/AdminRoute";
 import ApprovalRoute from "./components/auth/ApprovalRoute";
 import Users from "./pages/Users";
 import MyProfile from "./pages/MyProfile";
+import Calendar from "./pages/Calendar";
 
 function App() {
   return (
@@ -24,21 +25,22 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<ApprovalRoute />}>
           <Route element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/squad" element={<Squad />} />
-          <Route path="/profile" element={<MyProfile />} />
-          <Route path="/seasons" element={<Seasons />} />
-          <Route path="/voting" element={<Voting />} />
-          <Route path="/benefits" element={<BenefitTracker />} />
-          <Route path="/statistics" element={<Statistics />} />
-          <Route path="/matches/:matchId" element={<MatchDetails />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
-          <Route element={<AdminRoute />}>
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/users" element={<Users />} />
-          </Route>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/squad" element={<Squad />} />
+            <Route path="/profile" element={<MyProfile />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/seasons" element={<Seasons />} />
+            <Route path="/voting" element={<Voting />} />
+            <Route path="/benefits" element={<BenefitTracker />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/matches/:matchId" element={<MatchDetails />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/users" element={<Users />} />
+            </Route>
           </Route>
         </Route>
       </Route>

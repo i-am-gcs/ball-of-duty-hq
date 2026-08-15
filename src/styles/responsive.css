@@ -59,8 +59,36 @@
     font-size: 28px;
   }
 
-  .profile-box {
-    display: none;
+  @media (max-width: 560px) {
+    .page-header h2 {
+      font-size: 28px;
+    }
+
+    .profile-copy {
+      display: none;
+    }
+
+    .profile-trigger {
+      padding-right: 6px;
+    }
+
+    .profile-chevron {
+      display: none;
+    }
+
+    .profile-dropdown {
+      position: fixed;
+      top: 74px;
+      right: 12px;
+      left: 12px;
+
+      width: auto;
+    }
+
+    .form-actions {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 
   .form-actions {

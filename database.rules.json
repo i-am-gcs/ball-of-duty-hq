@@ -29,6 +29,15 @@
         }
       }
     },
+    "absences": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+
+      "$absenceId": {
+        ".write": "auth != null && (auth.token.admin === true || (!data.exists() && newData.child('playerId').val() === root.child('users').child(auth.uid).child('playerId').val()) || (data.exists() && data.child('playerId').val() === root.child('users').child(auth.uid).child('playerId').val()))",
+
+        ".validate": "newData.hasChildren(['playerId', 'startDate', 'endDate']) && (auth.token.admin === true || newData.child('playerId').val() === root.child('users').child(auth.uid).child('playerId').val())"
+      }
+    },
     "seasons": {
       ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
       ".write": "auth != null && auth.token.admin === true"
