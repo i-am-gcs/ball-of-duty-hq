@@ -75,7 +75,7 @@ function resolveVotesToPlayers(votesByUser, players) {
   for (const [discordUserId, vote] of Object.entries(votesByUser)) {
     const player = players.find(
       (player) =>
-        String(player.discordId).trim() === String(discordUserId).trim(),
+        String(player.discordId || "").trim() === String(discordUserId).trim(),
     );
 
     resolvedVotes[discordUserId] = {
@@ -99,16 +99,47 @@ function resolveVotesToPlayers(votesByUser, players) {
   return resolvedVotes;
 }
 
+function buildPlayerResults(votesByUser, players) {
+  const playerResults = {};
+
+  for (const player of players) {
+    if (!player.discordId) {
+      continue;
+    }
+
+    const discordUserId = String(player.discordId).trim();
+
+    const vote = votesByUser[discordUserId];
+
+    playerResults[player.id] = {
+      playerId: player.id,
+      discordId: discordUserId,
+      name: player.name || null,
+      nickname: player.nickname || null,
+
+      status: vote ? "VOTED" : "NO_VOTE",
+
+      answerIds: vote?.answerIds || [],
+    };
+  }
+
+  return playerResults;
+}
+
 export async function syncPollMessage(message, category) {
   if (!message.poll) {
     return false;
   }
 
   const pollData = serializePoll(message, category);
+
   const votesByUser = await getVotesByUser(message.poll);
+
   const players = await getPlayers();
 
   const resolvedVotes = resolveVotesToPlayers(votesByUser, players);
+
+  const playerResults = buildPlayerResults(votesByUser, players);
 
   await Promise.all([
     database.ref(`discordPolls/${message.id}`).set(pollData),
@@ -120,7 +151,10 @@ export async function syncPollMessage(message, category) {
       category,
       resultsFinalized: pollData.resultsFinalized,
       syncedAt: new Date().toISOString(),
+
       votes: resolvedVotes,
+
+      playerResults,
     }),
   ]);
 
@@ -130,17 +164,32 @@ export async function syncPollMessage(message, category) {
 
   const unmatchedCount = Object.keys(resolvedVotes).length - matchedCount;
 
+  const votedPlayerCount = Object.values(playerResults).filter(
+    (player) => player.status === "VOTED",
+  ).length;
+
+  const noVotePlayerCount = Object.values(playerResults).filter(
+    (player) => player.status === "NO_VOTE",
+  ).length;
+
   console.log(`Szavazás szinkronizálva: ${pollData.question}`);
 
   console.log(
     `Játékosazonosítás: ${matchedCount} egyezés, ${unmatchedCount} ismeretlen Discord ID.`,
   );
 
+  console.log(
+    `Szavazási állapot: ${votedPlayerCount} szavazott, ${noVotePlayerCount} nem szavazott.`,
+  );
+
   return true;
 }
 
 export async function syncRecentChannelPolls(channel, category) {
-  const messages = await channel.messages.fetch({ limit: 100 });
+  const messages = await channel.messages.fetch({
+    limit: 100,
+  });
+
   const pollMessages = messages.filter((message) => message.poll);
 
   for (const message of pollMessages.values()) {
