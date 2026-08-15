@@ -73,6 +73,24 @@ function getUnregisteredVoters(results) {
   return Object.values(results?.votes || {}).filter((vote) => !vote.matched);
 }
 
+function sortPlayersByVoteStatus(players) {
+  return [...players].sort((a, b) => {
+    const aVoted = a.status === "VOTED";
+    const bVoted = b.status === "VOTED";
+
+    // Szavazott játékosok kerüljenek előre
+    if (aVoted !== bVoted) {
+      return aVoted ? -1 : 1;
+    }
+
+    // Azonos státuszon belül név szerint
+    const aName = a.nickname || a.name || "";
+    const bName = b.nickname || b.name || "";
+
+    return aName.localeCompare(bName, "hu");
+  });
+}
+
 function PollPlayerResults({ poll, results, closed }) {
   const playerResults = getPlayerResults(results);
 
@@ -85,6 +103,8 @@ function PollPlayerResults({ poll, results, closed }) {
   const noVotePlayers = playerResults.filter(
     (player) => player.status === "NO_VOTE",
   );
+
+  const sortedPlayerResults = sortPlayersByVoteStatus(playerResults);
 
   if (playerResults.length === 0 && unregisteredVoters.length === 0) {
     return (
@@ -123,7 +143,7 @@ function PollPlayerResults({ poll, results, closed }) {
           <span>{playerResults.length}</span>
         </div>
 
-        {playerResults.map((player) => (
+        {sortedPlayerResults.map((player) => (
           <div
             className={`poll-player-result ${
               player.status === "VOTED"
@@ -398,7 +418,9 @@ function Voting() {
         resultsLoaded = true;
         handleLoading();
       },
-      () => {
+      (firebaseError) => {
+        console.error("discordPollResults betöltési hiba:", firebaseError);
+
         setError("Nem sikerült betölteni a szavazási eredményeket.");
 
         setLoading(false);
