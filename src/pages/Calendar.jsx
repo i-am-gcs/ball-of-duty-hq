@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
 import { useAuth } from "../contexts/AuthContext";
+
 import {
   createAbsence,
   deleteAbsence,
   getAbsences,
   updateAbsence,
 } from "../services/absenceService";
+
 import { getPlayers } from "../services/playerService";
+
+import { getUpcomingVpgMatchesNormalized } from "../services/vpgService";
+
 import AdminAbsencePanel from "../components/calendar/AdminAbsencePanel";
 
 import "../styles/calendar.css";
@@ -29,6 +34,10 @@ const MONTHS = [
   "November",
   "December",
 ];
+
+/* ==================================================
+   DATE HELPERS
+   ================================================== */
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -58,34 +67,55 @@ function isDateInRange(dateString, startDate, endDate) {
   return dateString >= startDate && dateString <= endDate;
 }
 
+/* ==================================================
+   VPG HELPERS
+   ================================================== */
+
+function formatVpgTime(datetime) {
+  if (!datetime) {
+    return "-";
+  }
+
+  const date = new Date(datetime);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleTimeString("hu-HU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getVpgMatchesForDay(matches, date) {
+  if (!date) {
+    return [];
+  }
+
+  const dateString = formatDate(date);
+
+  return matches.filter((match) => match.date === dateString);
+}
+
+/* ==================================================
+   CALENDAR
+   ================================================== */
+
 function Calendar() {
   const { profile, isAdmin } = useAuth();
 
-  /* ---------------------------------------------
-     CALENDAR
-     --------------------------------------------- */
-
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  /* ---------------------------------------------
-     DATA
-     --------------------------------------------- */
 
   const [absences, setAbsences] = useState([]);
 
   const [players, setPlayers] = useState([]);
 
-  /* ---------------------------------------------
-     LOADING / ERROR
-     --------------------------------------------- */
+  const [vpgMatches, setVpgMatches] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
-
-  /* ---------------------------------------------
-     FORM
-     --------------------------------------------- */
 
   const [showForm, setShowForm] = useState(false);
 
@@ -102,15 +132,9 @@ function Calendar() {
     endDate: "",
   });
 
-  /* ---------------------------------------------
-     ADMIN
-     --------------------------------------------- */
-
-  const [selectedDate, setSelectedDate] = useState("");
-
-  /* ---------------------------------------------
+  /* ==================================================
      LOAD DATA
-     --------------------------------------------- */
+     ================================================== */
 
   useEffect(() => {
     async function loadData() {
@@ -122,19 +146,19 @@ function Calendar() {
 
         setAbsences(absencesData);
 
-        /*
-         * A játékoslista csak az admin nézethez
-         * szükséges.
-         */
         if (isAdmin) {
           const playersData = await getPlayers();
 
           setPlayers(playersData);
         }
-      } catch (loadError) {
-        console.error("Távollétek betöltési hiba:", loadError);
 
-        setError("Nem sikerült betölteni a távolléteket.");
+        const vpgMatchesData = await getUpcomingVpgMatchesNormalized();
+
+        setVpgMatches(vpgMatchesData);
+      } catch (loadError) {
+        console.error("Calendar betöltési hiba:", loadError);
+
+        setError("Nem sikerült betölteni a naptár adatait.");
       } finally {
         setLoading(false);
       }
@@ -143,9 +167,9 @@ function Calendar() {
     loadData();
   }, [isAdmin]);
 
-  /* ---------------------------------------------
+  /* ==================================================
      CALENDAR DAYS
-     --------------------------------------------- */
+     ================================================== */
 
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -156,13 +180,6 @@ function Calendar() {
 
     const lastDay = new Date(year, month + 1, 0);
 
-    /*
-     * JavaScript:
-     * Sunday = 0
-     * Monday = 1
-     *
-     * A BoD naptár hétfővel kezdődik.
-     */
     const firstWeekday = (firstDay.getDay() + 6) % 7;
 
     const daysInMonth = lastDay.getDate();
@@ -180,9 +197,9 @@ function Calendar() {
     return days;
   }, [currentDate]);
 
-  /* ---------------------------------------------
+  /* ==================================================
      OWN ABSENCES
-     --------------------------------------------- */
+     ================================================== */
 
   const ownAbsences = useMemo(() => {
     if (!profile?.playerId) {
@@ -192,17 +209,17 @@ function Calendar() {
     return absences.filter((absence) => absence.playerId === profile.playerId);
   }, [absences, profile]);
 
-  /* ---------------------------------------------
+  /* ==================================================
      ADMIN PLAYER MAP
-     --------------------------------------------- */
+     ================================================== */
 
   const playerMap = useMemo(() => {
     return Object.fromEntries(players.map((player) => [player.id, player]));
   }, [players]);
 
-  /* ---------------------------------------------
+  /* ==================================================
      ADMIN ABSENCES
-     --------------------------------------------- */
+     ================================================== */
 
   const enrichedAbsences = useMemo(() => {
     return [...absences]
@@ -213,33 +230,9 @@ function Calendar() {
       .sort((a, b) => a.startDate.localeCompare(b.startDate));
   }, [absences, playerMap]);
 
-  /* ---------------------------------------------
-     ADMIN SELECTED DAY
-     --------------------------------------------- */
-
-  const selectedDayAbsences = useMemo(() => {
-    if (!selectedDate) {
-      return [];
-    }
-
-    return enrichedAbsences.filter((absence) =>
-      isDateInRange(selectedDate, absence.startDate, absence.endDate),
-    );
-  }, [selectedDate, enrichedAbsences]);
-
-  /* ---------------------------------------------
-     ADMIN UPCOMING
-     --------------------------------------------- */
-
-  const upcomingAbsences = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-
-    return enrichedAbsences.filter((absence) => absence.endDate >= today);
-  }, [enrichedAbsences]);
-
-  /* ---------------------------------------------
+  /* ==================================================
      MONTH NAVIGATION
-     --------------------------------------------- */
+     ================================================== */
 
   function previousMonth() {
     setCurrentDate(
@@ -257,9 +250,9 @@ function Calendar() {
     setCurrentDate(new Date());
   }
 
-  /* ---------------------------------------------
+  /* ==================================================
      FORM
-     --------------------------------------------- */
+     ================================================== */
 
   function openCreateForm() {
     setEditingAbsenceId(null);
@@ -307,9 +300,9 @@ function Calendar() {
     }));
   }
 
-  /* ---------------------------------------------
+  /* ==================================================
      SAVE ABSENCE
-     --------------------------------------------- */
+     ================================================== */
 
   async function submitAbsence(event) {
     event.preventDefault();
@@ -368,9 +361,9 @@ function Calendar() {
     }
   }
 
-  /* ---------------------------------------------
+  /* ==================================================
      DELETE ABSENCE
-     --------------------------------------------- */
+     ================================================== */
 
   async function removeOwnAbsence(absence) {
     const confirmed = window.confirm(
@@ -398,9 +391,9 @@ function Calendar() {
     }
   }
 
-  /* ---------------------------------------------
+  /* ==================================================
      DAY HELPERS
-     --------------------------------------------- */
+     ================================================== */
 
   function getAbsencesForDay(date) {
     if (!date) {
@@ -428,9 +421,9 @@ function Calendar() {
     );
   }
 
-  /* ---------------------------------------------
+  /* ==================================================
      ADMIN ABSENCE UPDATE
-     --------------------------------------------- */
+     ================================================== */
 
   function handleAdminAbsenceUpdated(updated) {
     setAbsences((current) =>
@@ -445,16 +438,12 @@ function Calendar() {
     );
   }
 
-  /* ---------------------------------------------
+  /* ==================================================
      RENDER
-     --------------------------------------------- */
+     ================================================== */
 
   return (
     <div className="page-stack">
-      {/* =========================================
-          PAGE HEADER
-          ========================================= */}
-
       <PageHeader
         eyebrow="Availability"
         title="Távolléti naptár"
@@ -462,7 +451,7 @@ function Calendar() {
       />
 
       {/* =========================================
-          PLAYER CALENDAR
+          CALENDAR
           ========================================= */}
 
       <section className="panel absence-calendar">
@@ -517,11 +506,17 @@ function Calendar() {
 
             const dayAbsences = getAbsencesForDay(date);
 
+            const dayVpgMatches = getVpgMatchesForDay(vpgMatches, date);
+
             return (
               <div
                 className={`absence-calendar__day ${
                   isToday(date) ? "absence-calendar__day--today" : ""
-                } ${dayAbsences.length ? "absence-calendar__day--absent" : ""}`}
+                } ${
+                  dayAbsences.length ? "absence-calendar__day--absent" : ""
+                } ${
+                  dayVpgMatches.length ? "absence-calendar__day--match" : ""
+                }`}
                 key={formatDate(date)}
               >
                 <span className="absence-calendar__date">{date.getDate()}</span>
@@ -529,10 +524,135 @@ function Calendar() {
                 {dayAbsences.length > 0 && (
                   <div className="absence-calendar__marker">Távollét</div>
                 )}
+
+                {/* =================================
+                      VPG MATCHES
+                      ================================= */}
+
+                {dayVpgMatches.length > 0 && (
+                  <div className="calendar-vpg-matches">
+                    {dayVpgMatches.map((match) => (
+                      <div className="calendar-vpg-match" key={match.id}>
+                        <div className="calendar-vpg-match__header">
+                          {match.competition === "Balkan League 2" && (
+                            <img
+                              src="/images/balkan-vpg-logo.png"
+                              alt="Balkan VPG"
+                              className="calendar-vpg-match__competition-logo"
+                            />
+                          )}
+
+                          <span className="calendar-vpg-match__competition">
+                            {match.competition}
+                          </span>
+                        </div>
+
+                        <div className="calendar-vpg-match__teams">
+                          <div className="calendar-vpg-match__team">
+                            {match.homeLogo && (
+                              <img
+                                src={match.homeLogo}
+                                alt=""
+                                className="calendar-vpg-match__logo"
+                              />
+                            )}
+
+                            <strong>{match.homeTeam}</strong>
+                          </div>
+
+                          <span className="calendar-vpg-match__vs">VS</span>
+
+                          <div className="calendar-vpg-match__team">
+                            {match.awayLogo && (
+                              <img
+                                src={match.awayLogo}
+                                alt=""
+                                className="calendar-vpg-match__logo"
+                              />
+                            )}
+
+                            <strong>{match.awayTeam}</strong>
+                          </div>
+                        </div>
+
+                        <span className="calendar-vpg-match__time">
+                          {formatVpgTime(match.datetime)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+      </section>
+
+      {/* =========================================
+          VPG FIXTURES
+          ========================================= */}
+
+      <section className="panel vpg-fixture-list">
+        <div className="vpg-fixture-list__header">
+          <div>
+            <p className="eyebrow">VPG</p>
+
+            <h2>Következő mérkőzések</h2>
+          </div>
+
+          <span>{vpgMatches.length} mérkőzés</span>
+        </div>
+
+        {loading && <p>VPG mérkőzések betöltése...</p>}
+
+        {!loading && vpgMatches.length === 0 && (
+          <div className="vpg-fixture-list__empty">
+            <span>🏆</span>
+
+            <h3>Nincs következő VPG mérkőzés</h3>
+          </div>
+        )}
+
+        {!loading && vpgMatches.length > 0 && (
+          <div className="vpg-fixtures">
+            {vpgMatches.map((match) => {
+              const matchDate = new Date(match.datetime);
+
+              return (
+                <article className="vpg-fixture" key={match.id}>
+                  <div className="vpg-fixture__date">
+                    <strong>
+                      {matchDate.toLocaleDateString("hu-HU", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
+                    </strong>
+
+                    <span>
+                      {matchDate.toLocaleDateString("hu-HU", {
+                        weekday: "short",
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="vpg-fixture__teams">
+                    <strong>{match.homeTeam}</strong>
+
+                    <span>vs</span>
+
+                    <strong>{match.awayTeam}</strong>
+                  </div>
+
+                  <div className="vpg-fixture__meta">
+                    <span>🏆 {match.competition}</span>
+
+                    <strong>{formatVpgTime(match.datetime)}</strong>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* =========================================
@@ -610,7 +730,7 @@ function Calendar() {
       </section>
 
       {/* =========================================
-          ADMIN VIEW
+          ADMIN
           ========================================= */}
 
       {isAdmin && (
