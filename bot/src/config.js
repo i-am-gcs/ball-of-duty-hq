@@ -31,4 +31,7 @@ export const config = {
     getRequiredEnvironmentVariable("DISCORD_POLL_CHANNELS"),
   ),
   firebaseDatabaseUrl: getRequiredEnvironmentVariable("FIREBASE_DATABASE_URL"),
+  firebaseServiceAccountBase64: getRequiredEnvironmentVariable(
+    "FIREBASE_SERVICE_ACCOUNT_BASE64",
+  ),
 };
