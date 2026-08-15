@@ -41,6 +41,10 @@
       ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
       ".write": false
     },
+    "discordPollResults": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": false
+    },
     "discordVotes": {
       ".read": "auth != null && auth.token.admin === true",
       ".write": false
