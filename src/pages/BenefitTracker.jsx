@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
 import "../styles/benefit-tracker.css";
-import { getCurrentBenefitBoard } from "../services/benefitTrackerService.js";
+import {
+  getCurrentBenefitBoard,
+  getBenefitStatus,
+} from "../services/benefitTrackerService.js";
+import { ref, update } from "firebase/database";
+import { database } from "../firebase/firebase";
 
 const loyaltyLevels = [
   {
@@ -506,6 +511,9 @@ function BenefitTracker() {
 
   const [loadingBoard, setLoadingBoard] = useState(true);
   const [boardError, setBoardError] = useState("");
+  const [savingPlayerId, setSavingPlayerId] = useState(null);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -543,6 +551,64 @@ function BenefitTracker() {
       mounted = false;
     };
   }, []);
+
+  function changePenaltyPoints(playerId, delta) {
+    setBenefitBoard((current) => ({
+      ...current,
+      players: current.players.map((player) => {
+        if (player.playerId !== playerId) {
+          return player;
+        }
+
+        const nextPenaltyPoints = Math.max(
+          0,
+          Number(player.penaltyPoints ?? 0) + delta,
+        );
+
+        return {
+          ...player,
+          penaltyPoints: nextPenaltyPoints,
+          status: getBenefitStatus({
+            penaltyPoints: nextPenaltyPoints,
+            attendanceRate: player.attendance?.rate ?? null,
+            votingRate: player.voting?.rate ?? null,
+          }),
+        };
+      }),
+    }));
+
+    setSaveMessage("");
+    setSaveError("");
+  }
+
+  async function savePenaltyPoints(player) {
+    if (!benefitBoard.season?.id || !player?.playerId) {
+      return;
+    }
+
+    try {
+      setSavingPlayerId(player.playerId);
+      setSaveMessage("");
+      setSaveError("");
+
+      await update(
+        ref(
+          database,
+          `benefitTracker/${benefitBoard.season.id}/players/${player.playerId}`,
+        ),
+        {
+          penaltyPoints: Number(player.penaltyPoints ?? 0),
+        },
+      );
+
+      setSaveMessage(`${player.playerName} büntetőpontjai mentve.`);
+    } catch (error) {
+      console.error("Benefit büntetőpont mentési hiba:", error);
+      setSaveError("Nem sikerült elmenteni a büntetőpontokat.");
+    } finally {
+      setSavingPlayerId(null);
+    }
+  }
 
   return (
     <div className="page-stack benefit-page">
@@ -695,6 +761,7 @@ function BenefitTracker() {
                   <th>Bünti</th>
                   <th>ToTW</th>
                   <th>Státusz</th>
+                  <th>Művelet</th>
                 </tr>
               </thead>
 
@@ -733,17 +800,42 @@ function BenefitTracker() {
                     </td>
 
                     <td className="numeric-cell">
-                      <span
-                        className={
-                          player.penaltyPoints >= 5
-                            ? "penalty-danger"
-                            : player.penaltyPoints > 0
-                              ? "penalty-warning"
-                              : "penalty-clean"
-                        }
-                      >
-                        {player.penaltyPoints}
-                      </span>
+                      <div className="benefit-penalty-editor">
+                        <button
+                          type="button"
+                          className="benefit-penalty-button"
+                          onClick={() =>
+                            changePenaltyPoints(player.playerId, -1)
+                          }
+                          disabled={Number(player.penaltyPoints ?? 0) <= 0}
+                          aria-label={`${player.playerName} büntetőpont csökkentése`}
+                        >
+                          −
+                        </button>
+
+                        <span
+                          className={
+                            player.penaltyPoints >= 5
+                              ? "penalty-danger"
+                              : player.penaltyPoints > 0
+                                ? "penalty-warning"
+                                : "penalty-clean"
+                          }
+                        >
+                          {player.penaltyPoints}
+                        </span>
+
+                        <button
+                          type="button"
+                          className="benefit-penalty-button"
+                          onClick={() =>
+                            changePenaltyPoints(player.playerId, 1)
+                          }
+                          aria-label={`${player.playerName} büntetőpont növelése`}
+                        >
+                          +
+                        </button>
+                      </div>
                     </td>
 
                     <td className="numeric-cell">
@@ -759,6 +851,19 @@ function BenefitTracker() {
                         {player.status.icon} {player.status.label}
                       </span>
                     </td>
+
+                    <td>
+                      <button
+                        type="button"
+                        className="button benefit-save-button"
+                        disabled={savingPlayerId === player.playerId}
+                        onClick={() => savePenaltyPoints(player)}
+                      >
+                        {savingPlayerId === player.playerId
+                          ? "Mentés..."
+                          : "Mentés"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -766,6 +871,12 @@ function BenefitTracker() {
           </div>
         )}
       </section>
+
+      {(saveMessage || saveError) && (
+        <div className={saveError ? "error-message" : "success-message"}>
+          {saveError || saveMessage}
+        </div>
+      )}
 
       <section className="benefit-summary-grid">
         <article className="panel benefit-info-card">

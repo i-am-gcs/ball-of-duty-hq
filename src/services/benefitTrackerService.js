@@ -1,6 +1,11 @@
-import { players } from "../data/players";
+import { get, ref, update } from "firebase/database";
+
+import { database } from "../firebase/firebase";
+
 import { seasons } from "../data/seasons";
 import { benefitTrackerData } from "../data/benefitTracker";
+
+import { getPlayers } from "./playerService";
 
 import {
   getSeasonPlayerStats,
@@ -32,10 +37,52 @@ export function getCurrentSeason() {
 }
 
 /**
- * Egy adott szezonhoz tartozó manuális Benefit adatok.
+ * Egy adott szezon Benefit adatai.
+ *
+ * Elsődlegesen Firebase-ből olvasunk.
+ *
+ * A benefitTrackerData továbbra is fallbackként
+ * megmarad, hogy a meglévő adatstruktúra ne törjön el.
  */
-function getSeasonBenefitData(seasonId) {
-  return benefitTrackerData[seasonId]?.players ?? {};
+async function getSeasonBenefitData(seasonId) {
+  const localData = benefitTrackerData[seasonId]?.players ?? {};
+
+  const benefitReference = ref(database, `benefitTracker/${seasonId}/players`);
+
+  const snapshot = await get(benefitReference);
+
+  if (!snapshot.exists()) {
+    return localData;
+  }
+
+  return {
+    ...localData,
+    ...snapshot.val(),
+  };
+}
+
+/**
+ * Egy játékos Benefit adatainak frissítése
+ * az aktuális / megadott szezonban.
+ *
+ * Például:
+ *
+ * updatePlayerBenefit(3, playerId, {
+ *   penaltyPoints: 2,
+ * });
+ */
+export async function updatePlayerBenefit(seasonId, playerId, changes) {
+  const playerBenefitReference = ref(
+    database,
+    `benefitTracker/${seasonId}/players/${playerId}`,
+  );
+
+  await update(playerBenefitReference, changes);
+
+  return {
+    playerId,
+    ...changes,
+  };
 }
 
 /**
@@ -65,9 +112,6 @@ export function calculateVotingRate(voting) {
 
 /**
  * Benefit státusz.
- *
- * 5 büntetőpont esetén automatikus
- * Benefit jogosultság-vesztés.
  */
 export function getBenefitStatus({
   penaltyPoints = 0,
@@ -101,39 +145,173 @@ export function getBenefitStatus({
 }
 
 /**
- * Sikeresen teljesített BOD szezonok.
+ * Lezárt BOD szezonok.
+ *
+ * Csak ezek számítanak bele a loyalty rendszerbe.
  */
-function getCompletedSeasonIds() {
+function getCompletedSeasons() {
   return seasons
     .filter((season) => season.status === "completed")
-    .sort((a, b) => a.id - b.id)
-    .map((season) => season.id);
+    .sort((a, b) => b.id - a.id);
 }
 
 /**
- * Játékos hűségszint.
+ * VPG username normalizálása.
  */
-export function getPlayerLoyaltyLevel(playerId) {
-  const completedSeasonIds = getCompletedSeasonIds();
+function normalizeVpgUsername(username) {
+  return String(username ?? "")
+    .trim()
+    .toLowerCase();
+}
 
-  if (!completedSeasonIds.length) {
+/**
+ * VPG statisztikai tömbből Map készítése.
+ */
+function createVpgPlayerMap(stats) {
+  return new Map(
+    stats
+      .filter((stat) => stat?.username)
+      .map((stat) => [normalizeVpgUsername(stat.username), stat]),
+  );
+}
+
+/**
+ * Játékos megkeresése a VPG Map-ben.
+ */
+function findVpgPlayer(vpgPlayerMap, player) {
+  const username = normalizeVpgUsername(player?.vpgUsername);
+
+  if (!username) {
+    return null;
+  }
+
+  return vpgPlayerMap.get(username) ?? null;
+}
+
+/**
+ * Egy szezon összes VPG statisztikájának betöltése.
+ *
+ * Egy szezonban minden versenyt csak egyszer kérünk le.
+ */
+async function loadSeasonVpgData(season) {
+  if (!season) {
     return {
-      level: "Recruit",
-      icon: "🟢",
-      completedSeasons: 0,
+      competitions: [],
+      competitionStats: [],
     };
   }
 
-  const player = players.find(
-    (item) =>
-      String(item.id) === String(playerId) ||
-      item.nickname === playerId ||
-      item.username === playerId,
+  const competitions = getVpgCompetitions(season, "ALL");
+
+  if (!competitions.length) {
+    return {
+      competitions: [],
+      competitionStats: [],
+    };
+  }
+
+  const competitionStats = await Promise.all(
+    competitions.map(async (competition) => {
+      const stats = await getSeasonPlayerStats({
+        competition,
+        weekly: false,
+      });
+
+      return {
+        competition,
+        stats,
+        playerMap: createVpgPlayerMap(stats),
+      };
+    }),
   );
 
-  const playerSeasons = player?.completedSeasons;
+  return {
+    competitions,
+    competitionStats,
+  };
+}
 
-  if (!Array.isArray(playerSeasons)) {
+/**
+ * VPG stat keresése egy adott versenyhez.
+ */
+function findCompetitionStats(seasonVpgData, competition) {
+  if (!competition) {
+    return null;
+  }
+
+  return (
+    seasonVpgData.competitionStats.find(
+      (item) => item.competition.id === competition.id,
+    ) ?? null
+  );
+}
+
+/**
+ * HPCL verseny felismerése.
+ */
+function findHpclCompetition(competitions) {
+  return (
+    competitions.find(
+      (competition) => competition.shortName?.toLowerCase() === "hpcl",
+    ) ??
+    competitions.find(
+      (competition) => competition.leagueSlug?.toLowerCase() === "hpcl1",
+    ) ??
+    competitions.find(
+      (competition) => competition.vpg?.leagueSlug?.toLowerCase() === "hpcl1",
+    ) ??
+    null
+  );
+}
+
+/**
+ * Balkan / BSL verseny felismerése.
+ */
+function findBalkanCompetition(competitions) {
+  return (
+    competitions.find(
+      (competition) => competition.shortName?.toLowerCase() === "balkan",
+    ) ??
+    competitions.find((competition) =>
+      competition.shortName?.toLowerCase().includes("balkan"),
+    ) ??
+    competitions.find((competition) =>
+      competition.shortName?.toLowerCase().includes("bsl"),
+    ) ??
+    competitions.find((competition) =>
+      competition.leagueSlug?.toLowerCase().includes("balkan"),
+    ) ??
+    competitions.find((competition) =>
+      competition.vpg?.leagueSlug?.toLowerCase().includes("balkan"),
+    ) ??
+    null
+  );
+}
+
+/**
+ * Egy adott játékos teljesített-e egy lezárt szezont?
+ *
+ * Legalább 1 hivatalos mérkőzés elegendő.
+ */
+function hasPlayedCompletedSeason(player, seasonVpgData) {
+  if (!player?.vpgUsername) {
+    return false;
+  }
+
+  const username = normalizeVpgUsername(player.vpgUsername);
+
+  return seasonVpgData.competitionStats.some(({ playerMap }) => {
+    const vpgPlayer = playerMap.get(username);
+
+    return vpgPlayer && Number(vpgPlayer.matchesPlayed ?? 0) > 0;
+  });
+}
+
+/**
+ * Loyalty rang automatikus kiszámítása.
+ */
+function calculateLoyaltyLevel(player, completedSeasonData) {
+  if (!player?.vpgUsername) {
     return {
       level: "Recruit",
       icon: "🟢",
@@ -143,12 +321,14 @@ export function getPlayerLoyaltyLevel(playerId) {
 
   let consecutive = 0;
 
-  for (let index = completedSeasonIds.length - 1; index >= 0; index -= 1) {
-    if (playerSeasons.includes(completedSeasonIds[index])) {
-      consecutive += 1;
-    } else {
+  for (const seasonData of completedSeasonData) {
+    const played = hasPlayedCompletedSeason(player, seasonData.vpgData);
+
+    if (!played) {
       break;
     }
+
+    consecutive += 1;
   }
 
   if (consecutive >= 5) {
@@ -183,30 +363,9 @@ export function getPlayerLoyaltyLevel(playerId) {
 }
 
 /**
- * Játékos megkeresése VPG statisztikából.
- */
-function findVpgPlayer(stats, player) {
-  if (!player) {
-    return null;
-  }
-
-  const nickname = String(player.nickname ?? "").toLowerCase();
-  const username = String(player.username ?? "").toLowerCase();
-
-  return (
-    stats.find((stat) => {
-      const statUsername = String(stat.username ?? "").toLowerCase();
-
-      return statUsername === nickname || statUsername === username;
-    }) ?? null
-  );
-}
-
-/**
  * Kombinált pont:
  *
- * HPCL VPG pont + Balkan VPG pont
- * osztva kettővel.
+ * HPCL + Balkan pontok átlaga.
  */
 export function calculateCombinedPoints(hpclPoints, balkanPoints) {
   if (
@@ -222,50 +381,7 @@ export function calculateCombinedPoints(hpclPoints, balkanPoints) {
 }
 
 /**
- * Versenysorozat felismerése.
- */
-function findCompetitionByType(competitions, type) {
-  if (type === "hpcl") {
-    return (
-      competitions.find(
-        (competition) => competition.shortName?.toLowerCase() === "hpcl",
-      ) ??
-      competitions.find(
-        (competition) => competition.leagueSlug?.toLowerCase() === "hpcl1",
-      ) ??
-      competitions.find(
-        (competition) => competition.vpg?.leagueSlug?.toLowerCase() === "hpcl1",
-      ) ??
-      null
-    );
-  }
-
-  if (type === "balkan") {
-    return (
-      competitions.find(
-        (competition) => competition.shortName?.toLowerCase() === "balkan",
-      ) ??
-      competitions.find((competition) =>
-        competition.leagueSlug?.toLowerCase().includes("balkan"),
-      ) ??
-      competitions.find((competition) =>
-        competition.vpg?.leagueSlug?.toLowerCase().includes("balkan"),
-      ) ??
-      null
-    );
-  }
-
-  return null;
-}
-
-/**
  * Aktuális szezon Benefit Board.
- *
- * FONTOS:
- * - kizárólag az aktuális BOD szezont használja
- * - VPG statisztikát a meglévő VPG service-ből kér
- * - attendance / voting / penalty / TOTW
- *   manuális Benefit adatból érkezik
  */
 export async function getCurrentBenefitBoard() {
   const season = getCurrentSeason();
@@ -277,55 +393,67 @@ export async function getCurrentBenefitBoard() {
     };
   }
 
-  const benefitData = getSeasonBenefitData(season.id);
-
   /**
-   * Csak az aktuális szezon VPG
-   * statisztikával rendelkező versenyei.
+   * Aktuális Firebase squad.
    */
-  const vpgCompetitions = getVpgCompetitions(season, "ALL");
+  const firebasePlayers = await getPlayers();
 
   /**
-   * HPCL és Balkan versenyek.
+   * Aktuális szezon Benefit adatai Firebase-ből.
    */
-  const hpclCompetition = findCompetitionByType(vpgCompetitions, "hpcl");
-
-  const balkanCompetition = findCompetitionByType(vpgCompetitions, "balkan");
+  const benefitData = await getSeasonBenefitData(season.id);
 
   /**
-   * VPG statisztikák lekérése külön
-   * versenysorozatonként.
+   * Aktuális szezon VPG adatok.
+   */
+  const currentSeasonVpgData = await loadSeasonVpgData(season);
+
+  /**
+   * Lezárt szezonok VPG adatai.
    *
-   * NEM módosítjuk a működő
-   * vpgPlayerStatsService-t.
+   * Minden lezárt szezon csak egyszer kerül lekérésre.
    */
-  let hpclStats = [];
-  let balkanStats = [];
+  const completedSeasons = getCompletedSeasons();
 
-  if (hpclCompetition) {
-    hpclStats = await getSeasonPlayerStats({
-      competition: hpclCompetition,
-      weekly: false,
-    });
-  }
-
-  if (balkanCompetition) {
-    balkanStats = await getSeasonPlayerStats({
-      competition: balkanCompetition,
-      weekly: false,
-    });
-  }
+  const completedSeasonData = await Promise.all(
+    completedSeasons.map(async (completedSeason) => ({
+      season: completedSeason,
+      vpgData: await loadSeasonVpgData(completedSeason),
+    })),
+  );
 
   /**
-   * Ha egyik versenysorozathoz sincs adat,
-   * üres VPG statisztikával dolgozunk.
+   * Aktuális HPCL / Balkan versenyek.
    */
-  const hasVpgData = hpclStats.length > 0 || balkanStats.length > 0;
+  const hpclCompetition = findHpclCompetition(
+    currentSeasonVpgData.competitions,
+  );
 
-  const rows = players.map((player) => {
-    /**
-     * Manuális Benefit adatok.
-     */
+  const balkanCompetition = findBalkanCompetition(
+    currentSeasonVpgData.competitions,
+  );
+
+  /**
+   * Aktuális verseny stat map-ek.
+   */
+  const hpclStatsData = findCompetitionStats(
+    currentSeasonVpgData,
+    hpclCompetition,
+  );
+
+  const balkanStatsData = findCompetitionStats(
+    currentSeasonVpgData,
+    balkanCompetition,
+  );
+
+  const hpclPlayerMap = hpclStatsData?.playerMap ?? new Map();
+
+  const balkanPlayerMap = balkanStatsData?.playerMap ?? new Map();
+
+  /**
+   * Aktuális squad összeállítása.
+   */
+  const rows = firebasePlayers.map((player) => {
     const benefit = benefitData[player.id] ?? {};
 
     const attendance = benefit.attendance ?? {
@@ -345,22 +473,19 @@ export async function getCurrentBenefitBoard() {
     const penaltyPoints = Number(benefit.penaltyPoints ?? 0);
 
     /**
-     * Loyalty.
+     * Automatikus loyalty.
      */
-    const loyalty = getPlayerLoyaltyLevel(player.id);
+    const loyalty = calculateLoyaltyLevel(player, completedSeasonData);
 
     /**
-     * VPG játékos HPCL-ben.
+     * Aktuális VPG játékos.
      */
-    const hpclPlayer = findVpgPlayer(hpclStats, player);
+    const hpclPlayer = findVpgPlayer(hpclPlayerMap, player);
+
+    const balkanPlayer = findVpgPlayer(balkanPlayerMap, player);
 
     /**
-     * VPG játékos Balkanban.
-     */
-    const balkanPlayer = findVpgPlayer(balkanStats, player);
-
-    /**
-     * VPG pontok.
+     * Aktuális VPG pontok.
      */
     const hpclPoints =
       hpclPlayer?.points !== undefined ? Number(hpclPlayer.points) : null;
@@ -369,13 +494,7 @@ export async function getCurrentBenefitBoard() {
       balkanPlayer?.points !== undefined ? Number(balkanPlayer.points) : null;
 
     /**
-     * VPG pont:
-     *
-     * Az aktuális szezonban szereplő
-     * versenysorozatok pontjainak összege.
-     *
-     * Ha csak egy versenyben van adat,
-     * annak pontját használjuk.
+     * Összes aktuális VPG pont.
      */
     let vpgPoints = null;
 
@@ -384,31 +503,19 @@ export async function getCurrentBenefitBoard() {
     }
 
     /**
-     * Kombinált pont:
-     *
-     * HPCL + Balkan pont átlaga.
-     *
-     * Csak akkor létezik,
-     * ha mindkét versenyben van adat.
+     * Kombinált pont.
      */
     const combinedPoints = calculateCombinedPoints(hpclPoints, balkanPoints);
 
     /**
-     * Meccsszám.
-     *
-     * Külön versenysorozatok,
-     * ezért ezeket összeadjuk.
+     * Aktuális szezon meccsszám.
      */
     const matchesPlayed =
       (hpclPlayer?.matchesPlayed ?? 0) + (balkanPlayer?.matchesPlayed ?? 0);
 
-    /**
-     * Ha egyik VPG versenyben sincs adat,
-     * ne mutassunk 0-t úgy, mintha
-     * valódi VPG adat lenne.
-     */
-    const finalMatchesPlayed =
-      hasVpgData && (hpclPlayer || balkanPlayer) ? matchesPlayed : null;
+    const hasCurrentVpgStats = hpclPlayer || balkanPlayer;
+
+    const finalMatchesPlayed = hasCurrentVpgStats ? matchesPlayed : null;
 
     /**
      * Benefit státusz.
@@ -422,49 +529,58 @@ export async function getCurrentBenefitBoard() {
     return {
       playerId: player.id,
 
-      playerName: player.nickname ?? player.username ?? "Ismeretlen",
+      playerName:
+        player.nickname ?? player.username ?? player.name ?? "Ismeretlen",
 
+      /**
+       * Firebase profilból.
+       */
+      vpgUsername: player.vpgUsername ?? "",
+
+      /**
+       * Automatikus loyalty.
+       */
       loyaltyLevel: loyalty.level,
 
       loyaltyIcon: loyalty.icon,
 
+      completedSeasons: loyalty.completedSeasons,
+
+      /**
+       * Aktuális szezon VPG.
+       */
       matchesPlayed: finalMatchesPlayed,
 
-      /**
-       * Aktuális szezon összes VPG pontja.
-       */
       vpgPoints,
 
-      /**
-       * HPCL pont külön.
-       *
-       * A JSX-nek jelenleg nem kötelező,
-       * de később jól jöhet.
-       */
       hpclPoints,
 
-      /**
-       * Balkan pont külön.
-       */
       balkanPoints,
 
-      /**
-       * HPCL + Balkan átlag.
-       */
       combinedPoints,
 
+      /**
+       * Discord / Benefit.
+       */
       attendance: {
         attended: attendance.attended,
+
         total: attendance.total,
+
         rate: attendanceRate,
       },
 
       voting: {
         participated: voting.participated,
+
         total: voting.total,
+
         rate: votingRate,
       },
 
+      /**
+       * Admin által kezelhető.
+       */
       penaltyPoints,
 
       totwAppearances: Number(benefit.totwAppearances ?? 0),
@@ -476,15 +592,11 @@ export async function getCurrentBenefitBoard() {
   });
 
   /**
-   * Benefit Board sorrend:
+   * Benefit Board sorrend.
    *
-   * 1. Benefit státusz
-   * 2. Kombinált pont
-   * 3. VPG pont
-   * 4. Meccsszám
-   *
-   * Ez csak a megjelenítési sorrend,
-   * az adatokat nem módosítja.
+   * 1. Kombinált pont
+   * 2. VPG pont
+   * 3. Meccsszám
    */
   rows.sort((a, b) => {
     const combinedA = a.combinedPoints ?? -1;
@@ -496,6 +608,7 @@ export async function getCurrentBenefitBoard() {
     }
 
     const vpgA = a.vpgPoints ?? -1;
+
     const vpgB = b.vpgPoints ?? -1;
 
     if (vpgB !== vpgA) {
@@ -507,7 +620,6 @@ export async function getCurrentBenefitBoard() {
 
   return {
     season,
-
     players: rows,
   };
 }
