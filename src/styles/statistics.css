@@ -1,0 +1,873 @@
+/* =========================================================
+   BALL OF DUTY HQ
+   STATISTICS
+   ========================================================= */
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* =========================================================
+   STATISTICS PANELS
+   ========================================================= */
+
+.page-stack > .panel {
+  overflow: hidden;
+
+  border: 1px solid rgba(52, 101, 99, 0.42);
+  border-radius: 18px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(11, 30, 22, 0.96),
+    rgba(5, 20, 15, 0.96)
+  );
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* =========================================================
+   PANEL HEADER
+   ========================================================= */
+
+.page-stack .panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 22px 24px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.page-stack .panel-heading h3 {
+  margin: 5px 0 0;
+
+  color: #f2eee2;
+
+  font-size: 21px;
+  font-weight: 900;
+}
+
+/* =========================================================
+   EYEBROW
+   ========================================================= */
+
+.page-stack .eyebrow {
+  margin: 0;
+
+  color: #f2c20d;
+
+  font-size: 10px;
+  font-weight: 900;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   MUTED TEXT
+   ========================================================= */
+
+.page-stack .muted {
+  color: #728b82;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  line-height: 1.6;
+}
+
+/* =========================================================
+   SEASON / COMPETITION SELECTOR
+   ========================================================= */
+
+/*
+ * A JSX-ben a selector panel közvetlenül
+ * a PageHeader után található, és select
+ * elemeket tartalmaz.
+ */
+
+.page-stack > .panel:has(select) {
+  padding-bottom: 20px;
+}
+
+/* selector labels */
+
+.page-stack > .panel:has(select) label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+
+  min-width: 0;
+}
+
+/* selector label text */
+
+.page-stack > .panel:has(select) label > span {
+  color: #728b82;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.04em;
+}
+
+/* select */
+
+.page-stack > .panel:has(select) select {
+  box-sizing: border-box;
+
+  width: 100%;
+
+  min-height: 42px;
+
+  padding: 0 12px;
+
+  color: #f2eee2;
+
+  border: 1px solid rgba(52, 101, 99, 0.5);
+  border-radius: 9px;
+
+  background: rgba(5, 24, 22, 0.8);
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.page-stack > .panel:has(select) select:hover {
+  border-color: rgba(71, 224, 174, 0.4);
+}
+
+.page-stack > .panel:has(select) select:focus {
+  border-color: rgba(71, 224, 174, 0.65);
+
+  box-shadow: 0 0 0 2px rgba(71, 224, 174, 0.08);
+}
+
+.page-stack > .panel:has(select) select:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+.page-stack > .panel:has(select) option {
+  color: #f2eee2;
+
+  background: #0b1d16;
+}
+
+/* =========================================================
+   FILTER INFORMATION
+   ========================================================= */
+
+.page-stack > .panel:has(select) > .muted {
+  color: #78928a;
+
+  font-size: 12px;
+}
+
+/* =========================================================
+   DASHBOARD GRID
+   ========================================================= */
+
+.page-stack .dashboard-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 20px;
+}
+
+/*
+ * A fő statisztikai panel teljes szélességű.
+ */
+
+.page-stack .dashboard-wide {
+  min-width: 0;
+}
+
+/* =========================================================
+   MAIN PLAYER STATISTICS
+   ========================================================= */
+
+.page-stack .panel:has(table) {
+  width: 100%;
+}
+
+/* table wrapper */
+
+.page-stack .panel:has(table) > div:last-child {
+  width: 100%;
+
+  overflow-x: auto;
+}
+
+/* =========================================================
+   STATISTICS TABLE
+   ========================================================= */
+
+.page-stack .panel table {
+  width: 100%;
+
+  min-width: 980px;
+
+  border-collapse: collapse;
+
+  border-spacing: 0;
+
+  font-size: 12px;
+}
+
+/* table head */
+
+.page-stack .panel table thead {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* header */
+
+.page-stack .panel table th {
+  padding: 15px 12px;
+
+  color: #66847d;
+
+  border-bottom: 1px solid rgba(52, 101, 99, 0.42);
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 0.07em;
+
+  text-align: center;
+
+  text-transform: uppercase;
+
+  white-space: nowrap;
+}
+
+/*
+ * Első oszlop
+ */
+
+.page-stack .panel table th:first-child {
+  padding-left: 24px;
+
+  text-align: left;
+}
+
+/* table cells */
+
+.page-stack .panel table td {
+  padding: 14px 12px;
+
+  color: #a9bdb6;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+
+  font-size: 12px;
+
+  text-align: center;
+
+  white-space: nowrap;
+}
+
+/*
+ * Player name
+ */
+
+.page-stack .panel table td:first-child {
+  padding-left: 24px;
+
+  color: #f2eee2;
+
+  font-weight: 800;
+
+  text-align: left;
+}
+
+/*
+ * Strong numbers
+ */
+
+.page-stack .panel table td strong {
+  color: #f2eee2;
+
+  font-weight: 900;
+}
+
+/*
+ * Pont oszlop kiemelése.
+ *
+ * A jelenlegi JSX alapján ez a harmadik
+ * oszlop.
+ */
+
+.page-stack .panel table th:nth-child(3) {
+  color: #f2c20d;
+}
+
+.page-stack .panel table td:nth-child(3) strong {
+  color: #f2c20d;
+
+  font-size: 13px;
+}
+
+/*
+ * Gól
+ */
+
+.page-stack .panel table td:nth-child(4) {
+  color: #47e0ae;
+
+  font-weight: 800;
+}
+
+/*
+ * Assist
+ */
+
+.page-stack .panel table td:nth-child(5) {
+  color: #f2eee2;
+
+  font-weight: 800;
+}
+
+/*
+ * Hover
+ */
+
+.page-stack .panel table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.page-stack .panel table tbody tr:hover {
+  background: rgba(71, 224, 174, 0.025);
+}
+
+/*
+ * Last row
+ */
+
+.page-stack .panel table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* =========================================================
+   CHART LISTS
+   ========================================================= */
+
+.page-stack .chart-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  padding: 20px 24px 24px;
+}
+
+/* =========================================================
+   CHART ROW
+   ========================================================= */
+
+.page-stack .chart-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(130px, 170px)
+    minmax(100px, 1fr)
+    38px;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+/* player */
+
+.page-stack .chart-row > span {
+  overflow: hidden;
+
+  color: #dce8e4;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+/* value */
+
+.page-stack .chart-row > strong {
+  color: #f2eee2;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  text-align: right;
+}
+
+/* =========================================================
+   CHART BAR
+   ========================================================= */
+
+.page-stack .bar-track {
+  width: 100%;
+  height: 8px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.055);
+}
+
+/* bar */
+
+.page-stack .bar-fill {
+  height: 100%;
+
+  min-width: 3px;
+
+  border-radius: inherit;
+
+  background: linear-gradient(90deg, #2d9c7b, #47e0ae);
+
+  box-shadow: 0 0 10px rgba(71, 224, 174, 0.12);
+
+  transition: width 0.35s ease;
+}
+
+/* =========================================================
+   METRIC LIST
+   ========================================================= */
+
+.page-stack .metric-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0;
+
+  padding: 8px 24px 20px;
+}
+
+/* metric */
+
+.page-stack .metric-list > div {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 15px 0;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+/* last metric */
+
+.page-stack .metric-list > div:last-child {
+  border-bottom: 0;
+}
+
+/* metric label */
+
+.page-stack .metric-list span {
+  color: #78928a;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* metric value */
+
+.page-stack .metric-list strong {
+  max-width: 60%;
+
+  overflow: hidden;
+
+  color: #f2eee2;
+
+  font-size: 17px;
+  font-weight: 900;
+
+  text-align: right;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   CURRENT SEASON GOAL / ASSIST PANELS
+   ========================================================= */
+
+/*
+ * Ezek a dashboard-grid második szintjén
+ * lévő panelek.
+ */
+
+.page-stack .dashboard-grid .panel {
+  min-width: 0;
+}
+
+/* current season info */
+
+.page-stack .dashboard-grid .panel > .muted {
+  padding: 0 24px;
+
+  color: #728b82;
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
+
+.page-stack .dashboard-grid .panel:has(.metric-list) {
+  min-width: 0;
+}
+
+/* =========================================================
+   ERROR / LOADING
+   ========================================================= */
+
+.page-stack > .panel > .muted:only-child {
+  display: block;
+
+  padding: 24px;
+
+  color: #78928a;
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   VPG STATISTICS COUNT
+   ========================================================= */
+
+.page-stack .panel-heading > .muted {
+  color: #728b82;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   CLUB RECORDS / ALL TIME
+   ========================================================= */
+
+.page-stack .club-records-panel {
+  overflow: hidden;
+
+  border-color: rgba(242, 194, 13, 0.24);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(242, 194, 13, 0.055),
+      transparent 34%
+    ),
+    linear-gradient(135deg, rgba(12, 31, 23, 0.98), rgba(5, 20, 15, 0.98));
+}
+
+.page-stack .club-records-intro {
+  padding: 18px 24px 0;
+
+  color: #728b82;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  line-height: 1.6;
+}
+
+.page-stack .club-records-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 12px;
+
+  padding: 20px 24px 24px;
+}
+
+.page-stack .club-record {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  min-width: 0;
+
+  padding: 15px;
+
+  border: 1px solid rgba(52, 101, 99, 0.34);
+  border-radius: 12px;
+
+  background: rgba(5, 24, 18, 0.62);
+
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.page-stack .club-record:hover {
+  border-color: rgba(242, 194, 13, 0.35);
+
+  background: rgba(10, 31, 23, 0.82);
+
+  transform: translateY(-2px);
+}
+
+.page-stack .club-record__icon {
+  display: grid;
+
+  flex: 0 0 38px;
+
+  width: 38px;
+  height: 38px;
+
+  place-items: center;
+
+  border: 1px solid rgba(242, 194, 13, 0.16);
+  border-radius: 10px;
+
+  background: rgba(242, 194, 13, 0.06);
+
+  font-size: 18px;
+}
+
+.page-stack .club-record__content {
+  display: flex;
+
+  flex-direction: column;
+
+  min-width: 0;
+
+  gap: 3px;
+}
+
+.page-stack .club-record__label {
+  overflow: hidden;
+
+  color: #728b82;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 0.07em;
+
+  text-overflow: ellipsis;
+
+  text-transform: uppercase;
+
+  white-space: nowrap;
+}
+
+.page-stack .club-record__player {
+  overflow: hidden;
+
+  color: #f2eee2;
+
+  font-size: 13px;
+  font-weight: 900;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.page-stack .club-record__value {
+  color: #f2c20d;
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .page-stack .club-records-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .page-stack .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-stack .club-records-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .page-stack {
+    gap: 18px;
+  }
+
+  .page-stack .panel-heading {
+    padding: 20px;
+  }
+
+  .page-stack .chart-list {
+    padding: 18px 20px 20px;
+  }
+
+  .page-stack .chart-row {
+    grid-template-columns:
+      120px
+      minmax(80px, 1fr)
+      36px;
+
+    gap: 9px;
+  }
+
+  .page-stack .panel table {
+    min-width: 900px;
+  }
+
+  .page-stack .club-records-grid {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .page-stack .club-records-intro {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .page-stack {
+    gap: 16px;
+  }
+
+  .page-stack .panel-heading {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    padding: 18px;
+  }
+
+  .page-stack .panel-heading > .muted {
+    align-self: flex-end;
+  }
+
+  .page-stack .chart-list {
+    padding: 18px;
+  }
+
+  .page-stack .chart-row {
+    grid-template-columns:
+      95px
+      minmax(60px, 1fr)
+      30px;
+
+    gap: 8px;
+  }
+
+  .page-stack .chart-row > span {
+    font-size: 11px;
+  }
+
+  .page-stack .chart-row > strong {
+    font-size: 12px;
+  }
+
+  .page-stack .metric-list {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .page-stack .metric-list > div {
+    padding: 13px 0;
+  }
+
+  .page-stack .metric-list strong {
+    font-size: 15px;
+  }
+
+  .page-stack .club-records-grid {
+    grid-template-columns: 1fr;
+
+    padding: 16px 18px 18px;
+  }
+
+  .page-stack .club-records-intro {
+    padding: 16px 18px 0;
+  }
+
+  .page-stack .club-record {
+    padding: 13px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 450px) {
+  .page-stack .chart-row {
+    grid-template-columns:
+      82px
+      minmax(50px, 1fr)
+      28px;
+  }
+
+  .page-stack .chart-row > span {
+    font-size: 10px;
+  }
+
+  .page-stack .chart-row > strong {
+    font-size: 11px;
+  }
+}

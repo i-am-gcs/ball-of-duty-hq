@@ -449,6 +449,44 @@ export async function getSeasonById(seasonId) {
   );
 }
 
+/**
+ * Egy szezon VPG statisztikához használható
+ * versenysorozatainak lekérése.
+ *
+ * Csak azok a competitionök kerülnek bele,
+ * amelyekhez van VPG season ID.
+ */
+export function getSeasonVpgCompetitions(season) {
+  if (!season) {
+    return [];
+  }
+
+  return (season.competitions || []).filter(
+    (competition) => competition.vpg?.seasonId || competition.vpgSeasonId,
+  );
+}
+
+/**
+ * Egy competition VPG season ID-jának lekérése.
+ *
+ * Támogatja az új:
+ *
+ * vpg: {
+ *   seasonId,
+ *   leagueSlug
+ * }
+ *
+ * struktúrát, valamint a régi
+ * vpgSeasonId mezőt is.
+ */
+export function getCompetitionVpgSeasonId(competition) {
+  if (!competition) {
+    return null;
+  }
+
+  return competition.vpg?.seasonId ?? competition.vpgSeasonId ?? null;
+}
+
 /* =========================================================
    ACTIVE SEASON
    ========================================================= */
