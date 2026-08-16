@@ -4,17 +4,6 @@ const VPG_IMAGE_BASE =
   "https://virtualprogaming.com/cdn-cgi/imagedelivery/cl8ocWLdmZDs72LEaQYaYw";
 
 /**
- * VPG csapatlogó URL generálása.
- */
-export function getVpgLogoUrl(logoId) {
-  if (!logoId) {
-    return null;
-  }
-
-  return `${VPG_IMAGE_BASE}/${logoId}/smThumb`;
-}
-
-/**
  * VPG liga alapadatainak lekérése.
  */
 export async function getVpgLeague(leagueSlug) {
@@ -32,11 +21,24 @@ export async function getVpgLeague(leagueSlug) {
 }
 
 /**
+ * VPG csapat/liga logó URL generálása.
+ */
+export function getVpgLogoUrl(logoId) {
+  if (!logoId) {
+    return null;
+  }
+
+  return `${VPG_IMAGE_BASE}/${logoId}/smThumb`;
+}
+
+/**
  * VPG liga tabellájának lekérése.
  *
- * Példa:
- *
+ * Aktuális szezon:
  * /leagues/Balkan-Championship%20B/table/?season=18&is_history=false
+ *
+ * Korábbi szezon:
+ * /leagues/HPCL2/table/?season=12&is_history=true
  */
 export async function getVpgLeagueStandings(
   leagueSlug,
@@ -65,6 +67,8 @@ export async function getVpgLeagueStandings(
   }
 
   const data = await response.json();
+
+  console.log("VPG STANDINGS RESPONSE:", data);
 
   if (!Array.isArray(data)) {
     console.error("VPG tabella API nem tömböt adott vissza:", data);
@@ -131,6 +135,21 @@ export async function getVpgLeagueStandingsNormalized(
  * Ball of Duty liga statisztika + tabella.
  *
  * A SeasonDetails ezt használja.
+ *
+ * A competition objektumban:
+ *
+ * vpg: {
+ *   seasonId: 12,
+ *   leagueSlug: "HPCL2"
+ * }
+ *
+ * és:
+ *
+ * vpgIsHistory: true
+ *
+ * adható meg.
+ *
+ * Ha nincs megadva, false az alapértelmezés.
  */
 export async function getBodLeagueStats(competition) {
   if (!competition) {
@@ -138,8 +157,9 @@ export async function getBodLeagueStats(competition) {
   }
 
   const leagueSlug = competition.vpgLeagueSlug;
-
   const vpgSeasonId = competition.vpgSeasonId;
+
+  const isHistory = Boolean(competition.vpgIsHistory);
 
   if (!leagueSlug) {
     throw new Error("A versenysorozathoz nincs megadva vpgLeagueSlug.");
@@ -149,5 +169,11 @@ export async function getBodLeagueStats(competition) {
     throw new Error("A versenysorozathoz nincs megadva vpgSeasonId.");
   }
 
-  return getVpgLeagueStandingsNormalized(leagueSlug, vpgSeasonId, false);
+  console.log("BOD VPG LEAGUE STATS:", {
+    leagueSlug,
+    vpgSeasonId,
+    isHistory,
+  });
+
+  return getVpgLeagueStandingsNormalized(leagueSlug, vpgSeasonId, isHistory);
 }

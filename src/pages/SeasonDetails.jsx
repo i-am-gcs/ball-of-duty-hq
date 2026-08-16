@@ -88,34 +88,6 @@ function formatGoalDifference(goalsFor, goalsAgainst) {
   return difference;
 }
 
-/**
- * VPG eredményekből szezonforma számítása.
- */
-function getVpgFormStats(matches) {
-  const stats = {
-    wins: 0,
-    draws: 0,
-    losses: 0,
-    total: matches.length,
-  };
-
-  matches.forEach((match) => {
-    if (match.result === "win") {
-      stats.wins += 1;
-    }
-
-    if (match.result === "draw") {
-      stats.draws += 1;
-    }
-
-    if (match.result === "loss") {
-      stats.losses += 1;
-    }
-  });
-
-  return stats;
-}
-
 function getMatchResultLabel(result) {
   if (result === "win") {
     return "GYŐZELEM";
@@ -242,14 +214,18 @@ function SeasonDetails() {
              * adataiból dolgozik.
              *
              * Az új struktúrából a VPG adatokat
-             * ideiglenesen kompatibilis formában
-             * adjuk át neki.
+             * kompatibilis formában adjuk át neki.
+             *
+             * Lezárt BOD szezon esetén a VPG history
+             * endpointot használjuk.
              */
             const vpgCompetition = {
               ...competition,
 
               vpgLeagueSlug: competition.vpg?.leagueSlug || "",
               vpgSeasonId: competition.vpg?.seasonId || null,
+
+              vpgIsHistory: season.status === "completed",
             };
 
             const standings = await getBodLeagueStats(vpgCompetition);
@@ -278,7 +254,7 @@ function SeasonDetails() {
     }
 
     loadVpgData();
-  }, [vpgCompetitions]);
+  }, [vpgCompetitions, season]);
 
   /*
    * =========================================
@@ -309,12 +285,6 @@ function SeasonDetails() {
               };
             }
 
-            /*
-             * Az új vpgMatchService már közvetlenül
-             * a BOD team endpointját használja.
-             *
-             * Ezért kizárólag a VPG season ID kell.
-             */
             const matches = await getVpgSeasonMatchesNormalized(vpgSeasonId);
 
             return {
@@ -377,13 +347,6 @@ function SeasonDetails() {
               };
             }
 
-            /*
-             * A completed endpoint ugyanúgy
-             * a BOD team meccseit adja vissza.
-             *
-             * A seasonId alapján választjuk ki
-             * a megfelelő VPG szezont.
-             */
             const matches = await getVpgCompletedMatches(vpgSeasonId);
 
             return {
@@ -452,18 +415,6 @@ function SeasonDetails() {
     return [...allMatches]
       .sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
       .slice(0, 5);
-  }, [vpgResults]);
-
-  /*
-   * =========================================
-   * VPG SZEZON FORMA
-   * =========================================
-   */
-
-  const vpgFormStats = useMemo(() => {
-    const allMatches = Object.values(vpgResults).flat();
-
-    return getVpgFormStats(allMatches);
   }, [vpgResults]);
 
   /*
@@ -671,56 +622,6 @@ function SeasonDetails() {
                       <strong>{stats.goalsAgainst}</strong>
 
                       <span>KAPOTT</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* =================================
-                      VPG FORM
-                      ================================= */}
-
-                {hasVpg && (
-                  <div className="season-details__form">
-                    <div className="panel-heading">
-                      <div>
-                        <p className="eyebrow">VPG</p>
-
-                        <h4>Szezon forma</h4>
-                      </div>
-
-                      <span className="season-statistics__competition-count">
-                        {vpgFormStats.total} mérkőzés
-                      </span>
-                    </div>
-
-                    <div className="season-details__form-stats">
-                      <div>
-                        <strong className="season-stat--win">
-                          {vpgFormStats.wins}
-                        </strong>
-
-                        <span>GYŐZELEM</span>
-                      </div>
-
-                      <div>
-                        <strong>{vpgFormStats.draws}</strong>
-
-                        <span>DÖNTETLEN</span>
-                      </div>
-
-                      <div>
-                        <strong className="season-stat--loss">
-                          {vpgFormStats.losses}
-                        </strong>
-
-                        <span>VERESÉG</span>
-                      </div>
-
-                      <div>
-                        <strong>{vpgFormStats.total}</strong>
-
-                        <span>ÖSSZES</span>
-                      </div>
                     </div>
                   </div>
                 )}
