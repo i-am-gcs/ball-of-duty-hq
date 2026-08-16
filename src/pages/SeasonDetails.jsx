@@ -216,16 +216,21 @@ function SeasonDetails() {
              * Az új struktúrából a VPG adatokat
              * kompatibilis formában adjuk át neki.
              *
-             * Lezárt BOD szezon esetén a VPG history
-             * endpointot használjuk.
+             * A VPG seasonId határozza meg,
+             * melyik szezon tabelláját kérjük le.
+             *
+             * Az is_history=false paramétert használjuk,
+             * mert a VPG API ebben az esetben adja vissza
+             * a teljes tabellát a megadott seasonId alapján.
              */
+
             const vpgCompetition = {
               ...competition,
 
               vpgLeagueSlug: competition.vpg?.leagueSlug || "",
               vpgSeasonId: competition.vpg?.seasonId || null,
 
-              vpgIsHistory: season.status === "completed",
+              vpgIsHistory: false,
             };
 
             const standings = await getBodLeagueStats(vpgCompetition);
@@ -254,7 +259,7 @@ function SeasonDetails() {
     }
 
     loadVpgData();
-  }, [vpgCompetitions, season]);
+  }, [vpgCompetitions]);
 
   /*
    * =========================================
@@ -636,7 +641,11 @@ function SeasonDetails() {
                       <div>
                         <p className="eyebrow">VPG</p>
 
-                        <h4>Aktuális tabella</h4>
+                        <h4>
+                          {isCompleted
+                            ? "Szezon végi tabella"
+                            : "Aktuális tabella"}
+                        </h4>
                       </div>
 
                       {standings.length > 0 && (
