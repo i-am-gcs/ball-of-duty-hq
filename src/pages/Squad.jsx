@@ -15,6 +15,7 @@ import {
 const emptyPlayerForm = {
   name: "",
   nickname: "",
+  vpgUsername: "",
   primaryPosition: "",
   secondaryPositions: [],
   status: "Aktív",
@@ -214,6 +215,7 @@ function Squad() {
     setPlayerForm({
       name: player.name || "",
       nickname: player.nickname || "",
+      vpgUsername: player.vpgUsername || "",
       primaryPosition: player.primaryPosition || player.position || "",
       secondaryPositions: Array.isArray(player.secondaryPositions)
         ? player.secondaryPositions
@@ -357,6 +359,7 @@ function Squad() {
     const playerData = {
       name: playerForm.name.trim(),
       nickname: playerForm.nickname.trim(),
+      vpgUsername: playerForm.vpgUsername.trim(),
       primaryPosition: playerForm.primaryPosition,
       secondaryPositions: playerForm.secondaryPositions,
       status: playerForm.status,
@@ -581,6 +584,22 @@ function Squad() {
               onChange={updatePlayerForm}
               placeholder="Például: Magickacsa"
             />
+          </label>
+
+          <label>
+            <span>VPG Username</span>
+
+            <input
+              name="vpgUsername"
+              value={playerForm.vpgUsername}
+              onChange={updatePlayerForm}
+              placeholder="Például: Kowi97"
+            />
+
+            <small>
+              A játékos pontos VPG felhasználóneve. Ez alapján kapcsoljuk össze
+              a VPG statisztikákkal.
+            </small>
           </label>
 
           <label>
@@ -1126,6 +1145,12 @@ function Squad() {
                 <strong className="player-profile-modal__value--small">
                   {selectedPlayer.discordId || "–"}
                 </strong>
+              </div>
+
+              <div>
+                <span>VPG Username</span>
+
+                <strong>{selectedPlayer.vpgUsername || "–"}</strong>
               </div>
             </div>
 
