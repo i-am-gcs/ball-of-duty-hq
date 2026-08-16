@@ -18,6 +18,11 @@ export const seasons = [
         division: "II. osztály",
         placement: 2,
 
+        vpg: {
+          seasonId: 12,
+          leagueSlug: "HPCL2",
+        },
+
         stats: {
           played: 25,
           wins: 17,
@@ -37,6 +42,11 @@ export const seasons = [
         type: "league",
         division: "Championship 2/A",
         placement: 3,
+
+        vpg: {
+          seasonId: 16,
+          leagueSlug: "Balkan-Championship",
+        },
 
         stats: {
           played: 22,
@@ -114,7 +124,12 @@ export const seasons = [
         shortName: "HPCL",
         type: "league",
         division: "I. osztály",
-        placement: 8,
+        placement: 7,
+
+        vpg: {
+          seasonId: 13,
+          leagueSlug: "HPCL1",
+        },
 
         stats: {
           played: 22,
@@ -136,6 +151,11 @@ export const seasons = [
         type: "league",
         division: "League 2B",
         placement: 5,
+
+        vpg: {
+          seasonId: 17,
+          leagueSlug: "Balkan-Championship B",
+        },
 
         stats: {
           played: 30,
@@ -220,8 +240,10 @@ export const seasons = [
         type: "league",
         division: "League 2",
 
-        vpgLeagueSlug: "Balkan-Championship%20B",
-        vpgSeasonId: 18,
+        vpg: {
+          seasonId: 18,
+          leagueSlug: "Balkan-Championship B",
+        },
 
         placement: null,
 

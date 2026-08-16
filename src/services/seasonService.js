@@ -82,6 +82,9 @@ function findStaticCompetition(firebaseCompetition, staticCompetitions = []) {
  *
  * A static adat adja a konfigurációt,
  * a Firebase adat pedig az aktuális állapotot.
+ *
+ * A történelmi placement esetében
+ * a static seasons.js értéke az elsődleges.
  */
 function mergeCompetition(firebaseCompetition, staticCompetitions = []) {
   const staticCompetition = findStaticCompetition(
@@ -101,23 +104,63 @@ function mergeCompetition(firebaseCompetition, staticCompetitions = []) {
 
   /*
    * Static az alap.
-   * Firebase felülírhatja.
+   * Firebase felülírhatja az adatokat.
    *
-   * Fontos:
-   * a VPG konfiguráció explicit módon
-   * megmarad a static adatból.
+   * Kivételek:
+   *
+   * 1. placement
+   *    A saját történelmi adatunkból jön.
+   *
+   * 2. vpg
+   *    A VPG konfigurációt megtartjuk
+   *    a static adatból, de támogatjuk
+   *    az esetleges Firebase konfigurációt is.
    */
   return {
     ...staticCompetition,
     ...firebaseCompetition,
 
+    /*
+     * A szezon végső helyezése a static adatból
+     * legyen elsődleges.
+     *
+     * Példa:
+     *
+     * static: 7
+     * Firebase: 8
+     *
+     * eredmény: 7
+     */
+    placement:
+      staticCompetition.placement ?? firebaseCompetition.placement ?? null,
+
+    /*
+     * Új VPG struktúra:
+     *
+     * vpg: {
+     *   seasonId,
+     *   leagueSlug
+     * }
+     */
+    vpg: {
+      ...(staticCompetition.vpg || {}),
+      ...(firebaseCompetition.vpg || {}),
+    },
+
+    /*
+     * Régi VPG mezők támogatása.
+     */
     vpgLeagueSlug:
       firebaseCompetition.vpgLeagueSlug ??
       staticCompetition.vpgLeagueSlug ??
+      staticCompetition.vpg?.leagueSlug ??
       null,
 
     vpgSeasonId:
-      firebaseCompetition.vpgSeasonId ?? staticCompetition.vpgSeasonId ?? null,
+      firebaseCompetition.vpgSeasonId ??
+      staticCompetition.vpgSeasonId ??
+      staticCompetition.vpg?.seasonId ??
+      null,
   };
 }
 
@@ -449,7 +492,6 @@ export async function getActiveSeason() {
       }
 
       const startDate = new Date(start);
-
       const endDate = new Date(end);
 
       return today >= startDate && today <= endDate;

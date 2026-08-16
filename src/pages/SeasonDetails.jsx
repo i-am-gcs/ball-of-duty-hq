@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { getSeasonById } from "../services/seasonService";
 import { getBodLeagueStats } from "../services/vpgLeagueService";
+import {
+  getVpgSeasonMatchesNormalized,
+  getVpgCompletedMatches,
+} from "../services/vpgMatchService";
+
+import SeasonStatistics from "../components/seasons/SeasonStatistics";
 
 function formatDate(date) {
   if (!date) {
@@ -16,51 +22,143 @@ function formatDate(date) {
   });
 }
 
+function formatMatchDate(date) {
+  if (!date) {
+    return "-";
+  }
+
+  return new Date(date).toLocaleDateString("hu-HU", {
+    weekday: "short",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+function formatMatchTime(date) {
+  if (!date) {
+    return "-";
+  }
+
+  return new Date(date).toLocaleTimeString("hu-HU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function getCompetitionStats(competition) {
   return {
-    played: competition?.stats?.played || 0,
-    wins: competition?.stats?.wins || 0,
-    draws: competition?.stats?.draws || 0,
-    losses: competition?.stats?.losses || 0,
-    goalsFor: competition?.stats?.goalsFor || 0,
-    goalsAgainst: competition?.stats?.goalsAgainst || 0,
+    played: competition?.stats?.played ?? 0,
+    wins: competition?.stats?.wins ?? 0,
+    draws: competition?.stats?.draws ?? 0,
+    losses: competition?.stats?.losses ?? 0,
+    goalsFor: competition?.stats?.goalsFor ?? 0,
+    goalsAgainst: competition?.stats?.goalsAgainst ?? 0,
   };
 }
 
-function getStatusLabel(status) {
-  if (status === "completed") {
-    return "Lezárt";
+function getStandingRowClass(standing) {
+  const teamName = standing?.teamName?.trim().toLowerCase();
+
+  if (teamName === "ball of duty cf") {
+    return "season-details__table-row--bod";
   }
 
-  if (status === "active") {
-    return "Aktív";
+  if (standing.position === 1) {
+    return "season-details__table-row--first";
   }
 
-  return "Közelgő";
+  if (standing.position === 2) {
+    return "season-details__table-row--second";
+  }
+
+  if (standing.position === 3) {
+    return "season-details__table-row--third";
+  }
+
+  return "";
 }
 
-function getStatusClass(status) {
-  if (status === "active") {
-    return "status-pill status-pill--success";
+function formatGoalDifference(goalsFor, goalsAgainst) {
+  const difference = goalsFor - goalsAgainst;
+
+  if (difference > 0) {
+    return `+${difference}`;
   }
 
-  if (status === "upcoming") {
-    return "status-pill status-pill--upcoming";
+  return difference;
+}
+
+/**
+ * VPG eredményekből szezonforma számítása.
+ */
+function getVpgFormStats(matches) {
+  const stats = {
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    total: matches.length,
+  };
+
+  matches.forEach((match) => {
+    if (match.result === "win") {
+      stats.wins += 1;
+    }
+
+    if (match.result === "draw") {
+      stats.draws += 1;
+    }
+
+    if (match.result === "loss") {
+      stats.losses += 1;
+    }
+  });
+
+  return stats;
+}
+
+function getMatchResultLabel(result) {
+  if (result === "win") {
+    return "GYŐZELEM";
   }
 
-  return "status-pill";
+  if (result === "loss") {
+    return "VERESÉG";
+  }
+
+  return "DÖNTETLEN";
+}
+
+function getMatchResultClass(result) {
+  if (result === "win") {
+    return "season-details__result--win";
+  }
+
+  if (result === "loss") {
+    return "season-details__result--loss";
+  }
+
+  return "season-details__result--draw";
 }
 
 function SeasonDetails() {
   const { seasonId } = useParams();
 
   const [season, setSeason] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const [vpgStandings, setVpgStandings] = useState({});
+  const [vpgMatches, setVpgMatches] = useState({});
+  const [vpgResults, setVpgResults] = useState({});
+
+  const [loading, setLoading] = useState(true);
+
   const [vpgLoading, setVpgLoading] = useState(false);
+  const [matchesLoading, setMatchesLoading] = useState(false);
+  const [resultsLoading, setResultsLoading] = useState(false);
+
+  const [error, setError] = useState("");
   const [vpgError, setVpgError] = useState("");
+  const [matchesError, setMatchesError] = useState("");
+  const [resultsError, setResultsError] = useState("");
 
   /*
    * =========================================
@@ -75,8 +173,6 @@ function SeasonDetails() {
         setError("");
 
         const data = await getSeasonById(seasonId);
-
-        console.log("SEASON DETAILS:", data);
 
         if (!data) {
           setError("A szezon nem található.");
@@ -98,33 +194,39 @@ function SeasonDetails() {
 
   /*
    * =========================================
-   * VPG TABELLÁK BETÖLTÉSE
+   * VPG VERSENYSOROZATOK
+   * =========================================
+   *
+   * Egy BOD szezon több competitionből állhat.
+   *
+   * Csak azokkal dolgozunk VPG-ként,
+   * amelyeknek van VPG season kapcsolatuk.
+   *
+   * Új struktúra:
+   *
+   * competition.vpg.seasonId
+   * competition.vpg.leagueSlug
+   */
+
+  const vpgCompetitions = useMemo(() => {
+    return (
+      season?.competitions?.filter(
+        (competition) =>
+          competition.type === "league" && competition.vpg?.seasonId,
+      ) || []
+    );
+  }, [season]);
+
+  /*
+   * =========================================
+   * VPG TABELLÁK
    * =========================================
    */
 
   useEffect(() => {
-    if (!season || season.status === "completed") {
-      return;
-    }
-
-    console.log("SEASON STATUS:", season.status);
-
-    console.log("SEASON COMPETITIONS:", season.competitions);
-
-    const vpgCompetitions =
-      season.competitions?.filter(
-        (competition) =>
-          competition.type === "league" &&
-          competition.vpgLeagueSlug &&
-          competition.vpgSeasonId,
-      ) || [];
-
-    console.log("VPG COMPETITIONS:", vpgCompetitions);
-
     if (vpgCompetitions.length === 0) {
-      console.log("Nincs VPG league competition.");
-
       setVpgStandings({});
+      setVpgError("");
       return;
     }
 
@@ -135,23 +237,22 @@ function SeasonDetails() {
 
         const results = await Promise.all(
           vpgCompetitions.map(async (competition) => {
-            console.log(
-              "VPG REQUEST:",
-              competition.name,
-              competition.vpgLeagueSlug,
-              competition.vpgSeasonId,
-            );
-
             /*
-             * A service már tudja:
+             * A standings service a competition
+             * adataiból dolgozik.
              *
-             * - melyik VPG league-et kell lekérni
-             * - melyik VPG seasonhöz tartozik
-             * - hogyan kell normalizálni a választ
+             * Az új struktúrából a VPG adatokat
+             * ideiglenesen kompatibilis formában
+             * adjuk át neki.
              */
-            const standings = await getBodLeagueStats(competition);
+            const vpgCompetition = {
+              ...competition,
 
-            console.log("VPG STANDINGS:", competition.name, standings);
+              vpgLeagueSlug: competition.vpg?.leagueSlug || "",
+              vpgSeasonId: competition.vpg?.seasonId || null,
+            };
+
+            const standings = await getBodLeagueStats(vpgCompetition);
 
             return {
               competitionId: competition.id,
@@ -160,28 +261,210 @@ function SeasonDetails() {
           }),
         );
 
-        const standingsMap = {};
+        const standingsByCompetition = results.reduce((accumulator, result) => {
+          accumulator[result.competitionId] = result.standings;
 
-        results.forEach((result) => {
-          standingsMap[result.competitionId] = result.standings;
-        });
+          return accumulator;
+        }, {});
 
-        console.log("VPG STANDINGS MAP:", standingsMap);
-
-        setVpgStandings(standingsMap);
+        setVpgStandings(standingsByCompetition);
       } catch (loadError) {
         console.error("VPG tabella betöltési hiba:", loadError);
 
         setVpgError("A VPG tabella jelenleg nem érhető el.");
-
-        setVpgStandings({});
       } finally {
         setVpgLoading(false);
       }
     }
 
     loadVpgData();
-  }, [season]);
+  }, [vpgCompetitions]);
+
+  /*
+   * =========================================
+   * VPG KÖVETKEZŐ MECCSEK
+   * =========================================
+   */
+
+  useEffect(() => {
+    if (vpgCompetitions.length === 0) {
+      setVpgMatches({});
+      setMatchesError("");
+      return;
+    }
+
+    async function loadVpgMatches() {
+      try {
+        setMatchesLoading(true);
+        setMatchesError("");
+
+        const results = await Promise.all(
+          vpgCompetitions.map(async (competition) => {
+            const vpgSeasonId = competition.vpg?.seasonId;
+
+            if (!vpgSeasonId) {
+              return {
+                competitionId: competition.id,
+                matches: [],
+              };
+            }
+
+            /*
+             * Az új vpgMatchService már közvetlenül
+             * a BOD team endpointját használja.
+             *
+             * Ezért kizárólag a VPG season ID kell.
+             */
+            const matches = await getVpgSeasonMatchesNormalized(vpgSeasonId);
+
+            return {
+              competitionId: competition.id,
+              matches,
+            };
+          }),
+        );
+
+        const matchesByCompetition = results.reduce((accumulator, result) => {
+          accumulator[result.competitionId] = result.matches;
+
+          return accumulator;
+        }, {});
+
+        setVpgMatches(matchesByCompetition);
+
+        console.log(
+          "VPG SEASON MATCHES:",
+          Object.values(matchesByCompetition).flat().length,
+        );
+      } catch (loadError) {
+        console.error("VPG meccsek betöltési hiba:", loadError);
+
+        setMatchesError("A VPG mérkőzések jelenleg nem érhetők el.");
+      } finally {
+        setMatchesLoading(false);
+      }
+    }
+
+    loadVpgMatches();
+  }, [vpgCompetitions]);
+
+  /*
+   * =========================================
+   * VPG LEJÁTSZOTT MECCSEK
+   * =========================================
+   */
+
+  useEffect(() => {
+    if (vpgCompetitions.length === 0) {
+      setVpgResults({});
+      setResultsError("");
+      return;
+    }
+
+    async function loadVpgResults() {
+      try {
+        setResultsLoading(true);
+        setResultsError("");
+
+        const results = await Promise.all(
+          vpgCompetitions.map(async (competition) => {
+            const vpgSeasonId = competition.vpg?.seasonId;
+
+            if (!vpgSeasonId) {
+              return {
+                competitionId: competition.id,
+                matches: [],
+              };
+            }
+
+            /*
+             * A completed endpoint ugyanúgy
+             * a BOD team meccseit adja vissza.
+             *
+             * A seasonId alapján választjuk ki
+             * a megfelelő VPG szezont.
+             */
+            const matches = await getVpgCompletedMatches(vpgSeasonId);
+
+            return {
+              competitionId: competition.id,
+              matches,
+            };
+          }),
+        );
+
+        const resultsByCompetition = results.reduce((accumulator, result) => {
+          accumulator[result.competitionId] = result.matches;
+
+          return accumulator;
+        }, {});
+
+        setVpgResults(resultsByCompetition);
+
+        console.log(
+          "VPG BOD COMPLETED RESULTS:",
+          Object.values(resultsByCompetition).flat(),
+        );
+      } catch (loadError) {
+        console.error("VPG eredmények betöltési hiba:", loadError);
+
+        setResultsError("A VPG eredmények jelenleg nem érhetők el.");
+      } finally {
+        setResultsLoading(false);
+      }
+    }
+
+    loadVpgResults();
+  }, [vpgCompetitions]);
+
+  /*
+   * =========================================
+   * KÖVETKEZŐ MECCSEK
+   * =========================================
+   */
+
+  const upcomingMatches = useMemo(() => {
+    const allMatches = Object.values(vpgMatches).flat();
+
+    const now = new Date();
+
+    return allMatches
+      .filter((match) => {
+        if (!match.datetime) {
+          return false;
+        }
+
+        return new Date(match.datetime) >= now;
+      })
+      .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
+      .slice(0, 5);
+  }, [vpgMatches]);
+
+  /*
+   * =========================================
+   * LEJÁTSZOTT EREDMÉNYEK
+   * =========================================
+   */
+
+  const completedMatches = useMemo(() => {
+    const allMatches = Object.values(vpgResults).flat();
+
+    return [...allMatches]
+      .sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
+      .slice(0, 5);
+  }, [vpgResults]);
+
+  /*
+   * =========================================
+   * VPG SZEZON FORMA
+   * =========================================
+   */
+
+  const vpgFormStats = useMemo(() => {
+    const allMatches = Object.values(vpgResults).flat();
+
+    return getVpgFormStats(allMatches);
+  }, [vpgResults]);
 
   /*
    * =========================================
@@ -219,6 +502,21 @@ function SeasonDetails() {
 
   const isCompleted = season.status === "completed";
 
+  /*
+   * =========================================
+   * SEASON STATISTICS
+   * =========================================
+   */
+
+  const competitionsWithStats =
+    season.competitions?.filter((competition) => competition.stats) || [];
+
+  /*
+   * =========================================
+   * RENDER
+   * =========================================
+   */
+
   return (
     <div className="page-stack">
       {/* =========================================
@@ -244,8 +542,20 @@ function SeasonDetails() {
           </p>
         </div>
 
-        <span className={getStatusClass(season.status)}>
-          {getStatusLabel(season.status)}
+        <span
+          className={`status-pill ${
+            season.status === "active"
+              ? "status-pill--success"
+              : season.status === "upcoming"
+                ? "status-pill--upcoming"
+                : ""
+          }`}
+        >
+          {season.status === "completed"
+            ? "Lezárt"
+            : season.status === "active"
+              ? "Aktív"
+              : "Közelgő"}
         </span>
       </section>
 
@@ -264,51 +574,13 @@ function SeasonDetails() {
 
         <div className="season-details__competitions">
           {season.competitions?.map((competition) => {
-            const localStats = getCompetitionStats(competition);
+            const stats = getCompetitionStats(competition);
 
-            /*
-             * A VPG service által visszaadott
-             * normalizált tabella.
-             */
             const standings = vpgStandings[competition.id] || [];
 
-            /*
-             * Ball of Duty keresése
-             * a VPG tabellában.
-             *
-             * A VPG adatban:
-             * teamName = "Ball of Duty CF"
-             * abbreviation = "PFC"
-             * slug = "pannonia-fc"
-             */
-            const bodStanding =
-              !isCompleted && standings.length > 0
-                ? standings.find(
-                    (team) =>
-                      team.teamName === "Ball of Duty CF" ||
-                      team.abbreviation === "PFC" ||
-                      team.slug === "pannonia-fc",
-                  )
-                : null;
-
-            /*
-             * Ha van VPG adat,
-             * abból használjuk a statisztikát.
-             *
-             * Ha nincs,
-             * marad a Firebase static stats.
-             */
-            const stats =
-              !isCompleted && bodStanding
-                ? {
-                    played: bodStanding.played,
-                    wins: bodStanding.wins,
-                    draws: bodStanding.draws,
-                    losses: bodStanding.losses,
-                    goalsFor: bodStanding.goalsFor,
-                    goalsAgainst: bodStanding.goalsAgainst,
-                  }
-                : localStats;
+            const hasVpg =
+              competition.type === "league" &&
+              Boolean(competition.vpg?.seasonId);
 
             return (
               <article
@@ -330,19 +602,11 @@ function SeasonDetails() {
                     {competition.division && <p>{competition.division}</p>}
                   </div>
 
-                  {isCompleted && competition.placement && (
+                  {competition.placement && (
                     <div className="season-details__placement">
                       <span>HELYEZÉS</span>
 
                       <strong>{competition.placement}.</strong>
-                    </div>
-                  )}
-
-                  {!isCompleted && bodStanding?.position && (
-                    <div className="season-details__placement">
-                      <span>AKTUÁLIS HELYEZÉS</span>
-
-                      <strong>{bodStanding.position}.</strong>
                     </div>
                   )}
                 </div>
@@ -412,123 +676,450 @@ function SeasonDetails() {
                 )}
 
                 {/* =================================
+                      VPG FORM
+                      ================================= */}
+
+                {hasVpg && (
+                  <div className="season-details__form">
+                    <div className="panel-heading">
+                      <div>
+                        <p className="eyebrow">VPG</p>
+
+                        <h4>Szezon forma</h4>
+                      </div>
+
+                      <span className="season-statistics__competition-count">
+                        {vpgFormStats.total} mérkőzés
+                      </span>
+                    </div>
+
+                    <div className="season-details__form-stats">
+                      <div>
+                        <strong className="season-stat--win">
+                          {vpgFormStats.wins}
+                        </strong>
+
+                        <span>GYŐZELEM</span>
+                      </div>
+
+                      <div>
+                        <strong>{vpgFormStats.draws}</strong>
+
+                        <span>DÖNTETLEN</span>
+                      </div>
+
+                      <div>
+                        <strong className="season-stat--loss">
+                          {vpgFormStats.losses}
+                        </strong>
+
+                        <span>VERESÉG</span>
+                      </div>
+
+                      <div>
+                        <strong>{vpgFormStats.total}</strong>
+
+                        <span>ÖSSZES</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* =================================
                       VPG STANDINGS
                       ================================= */}
 
-                {!isCompleted &&
-                  competition.type === "league" &&
-                  competition.vpgLeagueSlug && (
-                    <div className="season-details__standings">
-                      <div className="panel-heading">
-                        <div>
-                          <p className="eyebrow">VPG</p>
+                {hasVpg && (
+                  <div className="season-details__standings">
+                    <div className="panel-heading">
+                      <div>
+                        <p className="eyebrow">VPG</p>
 
-                          <h4>Aktuális tabella</h4>
-                        </div>
+                        <h4>Aktuális tabella</h4>
                       </div>
 
-                      {vpgLoading && (
-                        <div className="season-details__standings-empty">
-                          <span>📊</span>
-
-                          <p>VPG tabella betöltése...</p>
-                        </div>
-                      )}
-
-                      {!vpgLoading && vpgError && (
-                        <div className="season-details__standings-empty">
-                          <span>⚠️</span>
-
-                          <p>{vpgError}</p>
-                        </div>
-                      )}
-
-                      {!vpgLoading && !vpgError && standings.length > 0 && (
-                        <div className="season-details__table-wrapper">
-                          <table className="season-details__table">
-                            <thead>
-                              <tr>
-                                <th>#</th>
-                                <th>Csapat</th>
-                                <th>M</th>
-                                <th>GY</th>
-                                <th>D</th>
-                                <th>V</th>
-                                <th>LG</th>
-                                <th>KG</th>
-                                <th>P</th>
-                              </tr>
-                            </thead>
-
-                            <tbody>
-                              {standings.map((team) => {
-                                const isBod =
-                                  team.teamName === "Ball of Duty CF" ||
-                                  team.abbreviation === "PFC" ||
-                                  team.slug === "pannonia-fc";
-
-                                return (
-                                  <tr
-                                    key={team.slug || team.teamName}
-                                    className={
-                                      isBod
-                                        ? "season-details__table-row--bod"
-                                        : ""
-                                    }
-                                  >
-                                    <td>
-                                      <strong>{team.position}</strong>
-                                    </td>
-
-                                    <td>
-                                      <div className="season-details__team">
-                                        {team.logo ? (
-                                          <img src={team.logo} alt="" />
-                                        ) : (
-                                          <span>⚽</span>
-                                        )}
-
-                                        <span>{team.teamName}</span>
-                                      </div>
-                                    </td>
-
-                                    <td>{team.played}</td>
-
-                                    <td>{team.wins}</td>
-
-                                    <td>{team.draws}</td>
-
-                                    <td>{team.losses}</td>
-
-                                    <td>{team.goalsFor}</td>
-
-                                    <td>{team.goalsAgainst}</td>
-
-                                    <td>
-                                      <strong>{team.points}</strong>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-
-                      {!vpgLoading && !vpgError && standings.length === 0 && (
-                        <div className="season-details__standings-empty">
-                          <span>📊</span>
-
-                          <p>Még nincs elérhető tabella.</p>
-                        </div>
+                      {standings.length > 0 && (
+                        <span className="season-statistics__competition-count">
+                          {standings.length} csapat
+                        </span>
                       )}
                     </div>
-                  )}
+
+                    {vpgLoading && standings.length === 0 && (
+                      <div className="season-details__standings-empty">
+                        <span>📊</span>
+
+                        <p>VPG tabella betöltése...</p>
+                      </div>
+                    )}
+
+                    {!vpgLoading && vpgError && (
+                      <div className="season-details__standings-empty">
+                        <span>⚠️</span>
+
+                        <p>{vpgError}</p>
+                      </div>
+                    )}
+
+                    {!vpgLoading && !vpgError && standings.length === 0 && (
+                      <div className="season-details__standings-empty">
+                        <span>📊</span>
+
+                        <p>A VPG tabella jelenleg üres.</p>
+                      </div>
+                    )}
+
+                    {standings.length > 0 && (
+                      <div className="season-details__table-wrapper">
+                        <table className="season-details__table">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>CSAPAT</th>
+                              <th>M</th>
+                              <th>GY</th>
+                              <th>D</th>
+                              <th>V</th>
+                              <th>LG</th>
+                              <th>KG</th>
+                              <th>GD</th>
+                              <th>P</th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {standings.map((standing) => {
+                              const rowClass = getStandingRowClass(standing);
+
+                              return (
+                                <tr
+                                  key={standing.slug || standing.teamName}
+                                  className={`season-details__table-row ${rowClass}`}
+                                >
+                                  <td className="season-details__position">
+                                    {standing.position === 1
+                                      ? "🥇"
+                                      : standing.position === 2
+                                        ? "🥈"
+                                        : standing.position === 3
+                                          ? "🥉"
+                                          : standing.position}
+                                  </td>
+
+                                  <td>
+                                    <div className="season-details__team">
+                                      {standing.logo && (
+                                        <img
+                                          className="season-details__team-logo"
+                                          src={standing.logo}
+                                          alt=""
+                                        />
+                                      )}
+
+                                      <div className="season-details__team-name">
+                                        <span>{standing.teamName}</span>
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  <td>{standing.played}</td>
+
+                                  <td>{standing.wins}</td>
+
+                                  <td>{standing.draws}</td>
+
+                                  <td>{standing.losses}</td>
+
+                                  <td>{standing.goalsFor}</td>
+
+                                  <td>{standing.goalsAgainst}</td>
+
+                                  <td>
+                                    {formatGoalDifference(
+                                      standing.goalsFor,
+                                      standing.goalsAgainst,
+                                    )}
+                                  </td>
+
+                                  <td>{standing.points}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </article>
             );
           })}
         </div>
       </section>
+
+      {/* =========================================
+          UPCOMING MATCHES
+          ========================================= */}
+
+      {vpgCompetitions.length > 0 && (
+        <section className="panel season-details__matches">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">VPG fixtures</p>
+
+              <h3>Következő mérkőzések</h3>
+            </div>
+
+            {upcomingMatches.length > 0 && (
+              <span className="season-statistics__competition-count">
+                {upcomingMatches.length} mérkőzés
+              </span>
+            )}
+          </div>
+
+          {matchesLoading && upcomingMatches.length === 0 && (
+            <div className="season-details__standings-empty">
+              <span>⚽</span>
+
+              <p>Mérkőzések betöltése...</p>
+            </div>
+          )}
+
+          {!matchesLoading && matchesError && (
+            <div className="season-details__standings-empty">
+              <span>⚠️</span>
+
+              <p>{matchesError}</p>
+            </div>
+          )}
+
+          {!matchesLoading && !matchesError && upcomingMatches.length === 0 && (
+            <div className="season-details__standings-empty">
+              <span>⚽</span>
+
+              <p>Nincs közelgő mérkőzés.</p>
+            </div>
+          )}
+
+          {upcomingMatches.length > 0 && (
+            <div className="season-details__matches-list">
+              {upcomingMatches.map((match) => (
+                <article className="season-details__match" key={match.id}>
+                  <div className="season-details__match-round">
+                    <span>{match.matchDay}.</span>
+
+                    <small>FORDULÓ</small>
+                  </div>
+
+                  <div className="season-details__match-date">
+                    <strong>{formatMatchDate(match.datetime)}</strong>
+
+                    <span>{formatMatchTime(match.datetime)}</span>
+                  </div>
+
+                  <div className="season-details__match-teams">
+                    <div
+                      className={
+                        match.isHome
+                          ? "season-details__match-team season-details__match-team--bod"
+                          : "season-details__match-team"
+                      }
+                    >
+                      {match.isHome ? (
+                        <>
+                          <span>Ball of Duty CF</span>
+
+                          {match.homeLogo && (
+                            <img src={match.homeLogo} alt="" />
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {match.awayLogo && (
+                            <img src={match.awayLogo} alt="" />
+                          )}
+
+                          <span>Ball of Duty CF</span>
+                        </>
+                      )}
+                    </div>
+
+                    <strong className="season-details__match-vs">VS</strong>
+
+                    <div className="season-details__match-team">
+                      {match.isHome ? (
+                        <>
+                          {match.awayLogo && (
+                            <img src={match.awayLogo} alt="" />
+                          )}
+
+                          <span>{match.opponentName}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{match.opponentName}</span>
+
+                          {match.homeLogo && (
+                            <img src={match.homeLogo} alt="" />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="season-details__match-location">
+                    {match.isHome ? "HAZAI" : "IDEGENBEN"}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* =========================================
+          COMPLETED RESULTS
+          ========================================= */}
+
+      {vpgCompetitions.length > 0 && (
+        <section className="panel season-details__results">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">VPG results</p>
+
+              <h3>Legutóbbi eredmények</h3>
+            </div>
+
+            {completedMatches.length > 0 && (
+              <span className="season-statistics__competition-count">
+                {completedMatches.length} mérkőzés
+              </span>
+            )}
+          </div>
+
+          {resultsLoading && completedMatches.length === 0 && (
+            <div className="season-details__standings-empty">
+              <span>⚽</span>
+
+              <p>Eredmények betöltése...</p>
+            </div>
+          )}
+
+          {!resultsLoading && resultsError && (
+            <div className="season-details__standings-empty">
+              <span>⚠️</span>
+
+              <p>{resultsError}</p>
+            </div>
+          )}
+
+          {!resultsLoading &&
+            !resultsError &&
+            completedMatches.length === 0 && (
+              <div className="season-details__standings-empty">
+                <span>⚽</span>
+
+                <p>Még nincs lejátszott VPG mérkőzés.</p>
+              </div>
+            )}
+
+          {completedMatches.length > 0 && (
+            <div className="season-details__results-list">
+              {completedMatches.map((match) => (
+                <article className="season-details__result" key={match.id}>
+                  <div className="season-details__result-round">
+                    <span>{match.matchDay}.</span>
+
+                    <small>FORDULÓ</small>
+                  </div>
+
+                  <div className="season-details__result-date">
+                    <strong>{formatMatchDate(match.datetime)}</strong>
+
+                    <span>{formatMatchTime(match.datetime)}</span>
+                  </div>
+
+                  <div className="season-details__result-teams">
+                    <div
+                      className={
+                        match.isHome
+                          ? "season-details__result-team season-details__result-team--bod"
+                          : "season-details__result-team"
+                      }
+                    >
+                      {match.isHome ? (
+                        <>
+                          <span>Ball of Duty CF</span>
+
+                          {match.homeLogo && (
+                            <img src={match.homeLogo} alt="" />
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {match.awayLogo && (
+                            <img src={match.awayLogo} alt="" />
+                          )}
+
+                          <span>Ball of Duty CF</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="season-details__result-score">
+                      <strong>{match.homeScore}</strong>
+
+                      <span>:</span>
+
+                      <strong>{match.awayScore}</strong>
+                    </div>
+
+                    <div className="season-details__result-team">
+                      {match.isHome ? (
+                        <>
+                          {match.awayLogo && (
+                            <img src={match.awayLogo} alt="" />
+                          )}
+
+                          <span>{match.opponentName}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{match.opponentName}</span>
+
+                          {match.homeLogo && (
+                            <img src={match.homeLogo} alt="" />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`season-details__result-badge ${getMatchResultClass(
+                      match.result,
+                    )}`}
+                  >
+                    {getMatchResultLabel(match.result)}
+                  </div>
+
+                  <div className="season-details__result-location">
+                    {match.isHome ? "HAZAI" : "IDEGENBEN"}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* =========================================
+          SEASON STATISTICS
+          ========================================= */}
+
+      {competitionsWithStats.length > 0 && (
+        <SeasonStatistics competitions={season.competitions || []} />
+      )}
 
       {/* =========================================
           AWARDS
@@ -561,6 +1152,43 @@ function SeasonDetails() {
                 <strong>{player.nickname}</strong>
 
                 <small>{player.playerName}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* =========================================
+          INDIVIDUAL AWARDS
+          ========================================= */}
+
+      {isCompleted && season.awards?.individualAwards?.length > 0 && (
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Individual awards</p>
+
+              <h3>Egyéni díjak</h3>
+            </div>
+          </div>
+
+          <div className="season-details__milestones">
+            {season.awards.individualAwards.map((award, index) => (
+              <div
+                className="season-details__milestone"
+                key={`${award.playerName}-${award.award}-${index}`}
+              >
+                <span>★</span>
+
+                <p>
+                  <strong>{award.nickname || award.playerName}</strong>
+
+                  {" – "}
+
+                  {award.award}
+
+                  {award.position && ` (${award.position})`}
+                </p>
               </div>
             ))}
           </div>
