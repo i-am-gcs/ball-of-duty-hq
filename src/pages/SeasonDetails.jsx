@@ -46,6 +46,12 @@ function formatMatchTime(date) {
   });
 }
 
+/**
+ * Statikus szezon statisztikája.
+ *
+ * Ezt továbbra is megtartjuk a történelmi
+ * / nem VPG adatokhoz.
+ */
 function getCompetitionStats(competition) {
   return {
     played: competition?.stats?.played ?? 0,
@@ -54,6 +60,56 @@ function getCompetitionStats(competition) {
     losses: competition?.stats?.losses ?? 0,
     goalsFor: competition?.stats?.goalsFor ?? 0,
     goalsAgainst: competition?.stats?.goalsAgainst ?? 0,
+  };
+}
+
+/**
+ * BOD sor megkeresése a VPG tabellából.
+ *
+ * A VPG API-ból kapott standings már tartalmazza
+ * a valódi aktuális szezon statisztikákat.
+ */
+function getBodStanding(standings = []) {
+  return (
+    standings.find((standing) => {
+      const teamName = String(standing?.teamName || "")
+        .trim()
+        .toLowerCase();
+
+      return teamName === "ball of duty cf";
+    }) || null
+  );
+}
+
+/**
+ * VPG vagy statikus statisztika kiválasztása.
+ *
+ * Ha van VPG BOD standing, azt használjuk.
+ * Ha nincs, visszaesünk a season.js / Firebase
+ * statikus adataira.
+ */
+function getDisplayCompetitionStats(competition, standings = []) {
+  const staticStats = getCompetitionStats(competition);
+
+  if (competition?.type !== "league") {
+    return staticStats;
+  }
+
+  const bodStanding = getBodStanding(standings);
+
+  if (!bodStanding) {
+    return staticStats;
+  }
+
+  return {
+    played: Number(bodStanding.played ?? staticStats.played ?? 0),
+    wins: Number(bodStanding.wins ?? staticStats.wins ?? 0),
+    draws: Number(bodStanding.draws ?? staticStats.draws ?? 0),
+    losses: Number(bodStanding.losses ?? staticStats.losses ?? 0),
+    goalsFor: Number(bodStanding.goalsFor ?? staticStats.goalsFor ?? 0),
+    goalsAgainst: Number(
+      bodStanding.goalsAgainst ?? staticStats.goalsAgainst ?? 0,
+    ),
   };
 }
 
@@ -177,16 +233,6 @@ function SeasonDetails() {
    * =========================================
    * VPG VERSENYSOROZATOK
    * =========================================
-   *
-   * Minden olyan competition VPG competition,
-   * amelyhez tartozik VPG seasonId.
-   *
-   * Így:
-   *
-   * BSL        -> league
-   * Balkan Cup -> cup
-   *
-   * külön competitionként kezelhető.
    */
 
   const vpgCompetitions = useMemo(() => {
@@ -268,18 +314,6 @@ function SeasonDetails() {
    * =========================================
    * VPG KÖVETKEZŐ MECCSEK
    * =========================================
-   *
-   * FONTOS:
-   *
-   * Nem seasonId alapján kérjük le egyszer
-   * az összes meccset.
-   *
-   * Competition alapján kérjük le őket.
-   *
-   * Ez különíti el:
-   *
-   * BSL
-   * Balkan Cup
    */
 
   useEffect(() => {
@@ -480,7 +514,11 @@ function SeasonDetails() {
    */
 
   const competitionsWithStats =
-    season.competitions?.filter((competition) => competition.stats) || [];
+    season.competitions?.filter(
+      (competition) =>
+        competition.stats ||
+        (competition.type === "league" && competition.vpg?.seasonId),
+    ) || [];
 
   /*
    * =========================================
@@ -545,9 +583,21 @@ function SeasonDetails() {
 
         <div className="season-details__competitions">
           {season.competitions?.map((competition) => {
-            const stats = getCompetitionStats(competition);
+            /*
+             * =====================================
+             * FONTOS:
+             *
+             * Ha VPG liga, akkor a VPG tabellából
+             * vesszük a valódi statisztikát.
+             *
+             * Ez javítja a Season 3 / seasonId 18
+             * statisztikáit is.
+             * =====================================
+             */
 
             const standings = vpgStandings[competition.id] || [];
+
+            const stats = getDisplayCompetitionStats(competition, standings);
 
             const hasVpg =
               competition.type === "league" &&
@@ -768,8 +818,7 @@ function SeasonDetails() {
                 )}
 
                 {/* =================================
-                    UPCOMING MATCHES FOR THIS
-                    COMPETITION
+                    UPCOMING MATCHES
                     ================================= */}
 
                 {competition.vpg?.seasonId && (
@@ -907,8 +956,7 @@ function SeasonDetails() {
                 )}
 
                 {/* =================================
-                    COMPLETED RESULTS FOR THIS
-                    COMPETITION
+                    COMPLETED RESULTS
                     ================================= */}
 
                 {competition.vpg?.seasonId && (
