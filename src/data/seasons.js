@@ -249,6 +249,23 @@ export const seasons = [
 
         stats: null,
       },
+
+      {
+        id: "balkan-cup-season-3",
+        name: "VPG Balkan Cup",
+        shortName: "Balkan Cup",
+        type: "cup",
+
+        vpg: {
+          seasonId: 18,
+          tournamentId: 2011,
+          tournamentSlug: "Balkan-eLeague-Cup",
+        },
+
+        placement: null,
+
+        stats: null,
+      },
     ],
 
     awards: {
