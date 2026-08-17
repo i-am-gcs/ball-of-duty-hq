@@ -41,13 +41,12 @@ const menuItems = [
   { to: "/benefits", label: "Benefit Tracker", icon: "★" },
   { to: "/statistics", label: "Statisztikák", icon: "⌁" },
   { to: "/users", label: "Felhasználók", icon: "♙", adminOnly: true },
-  { to: "/settings", label: "Beállítások", icon: "⚙" },
 ];
 
 function Sidebar({ open, onClose }) {
   const { isAdmin } = useAuth();
   const visibleMenuItems = menuItems.filter(
-    (item) => (!item.adminOnly && item.to !== "/settings") || isAdmin,
+    (item) => !item.adminOnly || isAdmin,
   );
   return (
     <>
@@ -78,11 +77,6 @@ function Sidebar({ open, onClose }) {
             </NavLink>
           ))}
         </nav>
-        <div className="season-mini">
-          <span>Aktív szezon</span>
-          <strong>Ball of Duty III.</strong>
-          <small>2026 / folyamatban</small>
-        </div>
       </aside>
       {open && (
         <button

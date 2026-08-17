@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import StatCard from "../components/ui/StatCard";
-import { players } from "../data/players";
-import { results } from "../data/results";
-
+import { getPlayers } from "../services/playerService";
+import { getActiveSeason } from "../services/seasonService";
 import { getUpcomingVpgMatchesNormalized } from "../services/vpgService";
 
 function formatVpgDate(datetime) {
@@ -77,10 +76,36 @@ function getCountdown(datetime) {
   };
 }
 
+function getSeasonDisplayName(season) {
+  if (!season?.name) {
+    return "—";
+  }
+
+  return season.name.replace(/^Ball of Duty\s*/i, "");
+}
+
+function getSeasonLeague(season) {
+  return (
+    (season?.competitions || []).find(
+      (competition) => competition.type === "league",
+    ) || null
+  );
+}
+
+function getSeasonPlacement(season) {
+  return (
+    (season?.competitions || []).find(
+      (competition) =>
+        competition.type === "league" && competition.placement != null,
+    )?.placement ?? null
+  );
+}
+
 function Dashboard() {
-  const activePlayers = players.filter(
-    (player) => player.status === "Aktív",
-  ).length;
+  const [activePlayers, setActivePlayers] = useState([]);
+  const [activeSeason, setActiveSeason] = useState(null);
+  const [clubDataLoading, setClubDataLoading] = useState(true);
+  const [clubDataError, setClubDataError] = useState("");
 
   const [nextMatch, setNextMatch] = useState(null);
 
@@ -89,6 +114,37 @@ function Dashboard() {
   const [vpgError, setVpgError] = useState("");
 
   const [countdown, setCountdown] = useState(null);
+
+  useEffect(() => {
+    async function loadClubData() {
+      try {
+        setClubDataLoading(true);
+        setClubDataError("");
+
+        const [players, season] = await Promise.all([
+          getPlayers(),
+          getActiveSeason(),
+        ]);
+
+        const activeSquad = players.filter(
+          (player) =>
+            player.status === "Aktív" &&
+            player.nickname !== "BoD Admin" &&
+            player.name !== "BoD Admin",
+        );
+
+        setActivePlayers(activeSquad);
+        setActiveSeason(season);
+      } catch (error) {
+        console.error("Dashboard klubadat betöltési hiba:", error);
+        setClubDataError("Nem sikerült betölteni a klub aktuális adatait.");
+      } finally {
+        setClubDataLoading(false);
+      }
+    }
+
+    loadClubData();
+  }, []);
 
   useEffect(() => {
     async function loadNextMatch() {
@@ -151,18 +207,37 @@ function Dashboard() {
           STAT CARDS
           ========================================= */}
 
+      {clubDataError && <p className="error-message">{clubDataError}</p>}
+
       <section className="stat-grid">
         <StatCard
           label="Keretlétszám"
-          value={players.length}
-          detail={`${activePlayers} aktív játékos`}
+          value={clubDataLoading ? "…" : activePlayers.length}
+          detail={clubDataLoading ? "Betöltés..." : "Aktív játékos"}
           icon="♟"
         />
 
         <StatCard
           label="Aktív szezon"
-          value="III."
-          detail="2026 / folyamatban"
+          value={
+            activeSeason
+              ? getSeasonDisplayName(activeSeason)
+              : clubDataLoading
+                ? "…"
+                : "—"
+          }
+          detail={
+            activeSeason
+              ? `${activeSeason.period?.start || ""} / ${
+                  activeSeason.status === "active" ||
+                  activeSeason.active === true
+                    ? "folyamatban"
+                    : activeSeason.period?.end || ""
+                }`
+              : clubDataLoading
+                ? "Betöltés..."
+                : "Nincs aktív szezon"
+          }
           icon="◫"
         />
 
@@ -183,8 +258,15 @@ function Dashboard() {
 
         <StatCard
           label="Aktuális helyezés"
-          value="8."
-          detail="HPCL I. osztály"
+          value={
+            getSeasonPlacement(activeSeason) != null
+              ? `${getSeasonPlacement(activeSeason)}.`
+              : "—"
+          }
+          detail={
+            getSeasonLeague(activeSeason)?.name ||
+            (clubDataLoading ? "Betöltés..." : "Nincs helyezés")
+          }
           icon="★"
         />
       </section>
@@ -338,49 +420,11 @@ function Dashboard() {
           <div className="quick-actions">
             <Link to="/squad">Játékoskeret megnyitása</Link>
 
-            <Link to="/voting">Új szavazás</Link>
+            <Link to="/voting">Szavazások</Link>
 
             <Link to="/benefits">Benefit Tracker</Link>
 
             <Link to="/statistics">Statisztikák</Link>
-          </div>
-        </article>
-
-        {/* =======================================
-            RECENT RESULTS
-            ======================================= */}
-
-        <article className="panel dashboard-wide">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Legutóbbi eredmények</p>
-
-              <h3>Formamutató</h3>
-            </div>
-
-            <Link to="/statistics">Részletek →</Link>
-          </div>
-
-          <div className="result-list">
-            {results.map((result) => (
-              <div className="result-row" key={result.id}>
-                <div>
-                  <strong>{result.opponent}</strong>
-
-                  <span>{result.competition}</span>
-                </div>
-
-                <b>{result.score}</b>
-
-                <span
-                  className={`status-pill ${
-                    result.outcome === "Győzelem" ? "status-pill--success" : ""
-                  }`}
-                >
-                  {result.outcome}
-                </span>
-              </div>
-            ))}
           </div>
         </article>
       </section>

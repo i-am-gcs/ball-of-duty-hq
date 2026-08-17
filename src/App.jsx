@@ -6,7 +6,6 @@ import Squad from "./pages/Squad";
 import Voting from "./pages/Voting";
 import BenefitTracker from "./pages/BenefitTracker";
 import Statistics from "./pages/Statistics";
-import Settings from "./pages/Settings";
 import MatchDetails from "./pages/MatchDetails";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -38,7 +37,6 @@ function App() {
             <Route path="/matches" element={<Matches />} />
             <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
             <Route element={<AdminRoute />}>
-              <Route path="/settings" element={<Settings />} />
               <Route path="/users" element={<Users />} />
             </Route>
           </Route>

@@ -10,7 +10,6 @@ const titles = {
   "/voting": "Szavazások",
   "/benefits": "Benefit Tracker",
   "/statistics": "Statisztikák",
-  "/settings": "Beállítások",
   "/users": "Felhasználók",
 };
 

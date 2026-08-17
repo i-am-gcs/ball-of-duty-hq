@@ -12,7 +12,6 @@ import "./styles/squad.css";
 import "./styles/voting.css";
 import "./styles/benefit-tracker.css";
 import "./styles/statistics.css";
-import "./styles/settings.css";
 import "./styles/seasons.css";
 import "./styles/matches.css";
 
