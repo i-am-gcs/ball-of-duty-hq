@@ -7,9 +7,13 @@ const titles = {
   "/squad": "Játékoskeret",
   "/profile": "Saját profilom",
   "/seasons": "Szezonok",
+  "/calendar": "Naptár",
   "/voting": "Szavazások",
   "/benefits": "Benefit Tracker",
+  "/lineup": "Kezdő 11",
+  "/matchday-xi": "Matchday XI",
   "/statistics": "Statisztikák",
+  "/matches": "Mérkőzések",
   "/users": "Felhasználók",
 };
 

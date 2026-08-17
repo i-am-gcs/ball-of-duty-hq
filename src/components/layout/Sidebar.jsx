@@ -7,41 +7,69 @@ const menuItems = [
     label: "Dashboard",
     icon: "▦",
   },
+
   {
     to: "/squad",
     label: "Játékoskeret",
     icon: "♟",
   },
+
   {
     to: "/seasons",
     label: "Szezonok",
     icon: "◫",
   },
+
   {
     to: "/calendar",
     label: "Naptár",
     icon: "▦",
   },
+
   {
     to: "/voting",
     label: "Szavazások",
     icon: "✓",
   },
+
   {
     to: "/benefits",
     label: "Benefit Tracker",
     icon: "★",
   },
+
+  /* =====================================================
+     ADMIN
+  ===================================================== */
+
   {
     to: "/lineup",
     label: "Kezdő 11",
     icon: "⚽",
+    adminOnly: true,
   },
+
+  /* =====================================================
+     PLAYERS
+  ===================================================== */
+
+  {
+    to: "/matchday-xi",
+    label: "Matchday XI",
+    icon: "🏆",
+    playerOnly: true,
+  },
+
   {
     to: "/statistics",
     label: "Statisztikák",
     icon: "⌁",
   },
+
+  /* =====================================================
+     ADMIN
+  ===================================================== */
+
   {
     to: "/users",
     label: "Felhasználók",
@@ -53,9 +81,17 @@ const menuItems = [
 function Sidebar({ open, onClose }) {
   const { isAdmin } = useAuth();
 
-  const visibleMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || isAdmin,
-  );
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (item.adminOnly) {
+      return isAdmin;
+    }
+
+    if (item.playerOnly) {
+      return !isAdmin;
+    }
+
+    return true;
+  });
 
   return (
     <>

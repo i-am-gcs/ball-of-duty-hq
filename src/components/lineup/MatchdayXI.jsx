@@ -316,10 +316,8 @@ export default function MatchdayXI({ match, lineup, players }) {
         </div>
 
         <div className="matchday-header__match">
-          <div className="matchday-team">
-            {match.isHome && match.homeLogo && (
-              <img src={match.homeLogo} alt="" />
-            )}
+          <div className="matchday-team matchday-team--home">
+            <img src="/assets/brand/bod-crest-v3.png" alt="Ball of Duty CF" />
 
             <strong>BALL OF DUTY CF</strong>
           </div>

@@ -23,12 +23,24 @@ import MatchdayXIPage from "./pages/MatchdayXIPage";
 function App() {
   return (
     <Routes>
+      {/* =====================================================
+          PUBLIC
+      ===================================================== */}
+
       <Route path="/login" element={<Login />} />
+
+      {/* =====================================================
+          AUTHENTICATED + APPROVED
+      ===================================================== */}
 
       <Route element={<ProtectedRoute />}>
         <Route element={<ApprovalRoute />}>
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
+
+            {/* =================================================
+                GENERAL
+            ================================================= */}
 
             <Route path="/dashboard" element={<Dashboard />} />
 
@@ -39,8 +51,6 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
 
             <Route path="/seasons" element={<Seasons />} />
-
-            <Route path="/matchday-xi" element={<MatchdayXIPage />} />
 
             <Route path="/voting" element={<Voting />} />
 
@@ -54,16 +64,36 @@ function App() {
 
             <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
 
-            {/* KEZDŐ 11 */}
-            <Route path="/lineup" element={<LineupBuilder />} />
+            {/* =================================================
+                MATCHDAY XI
 
-            {/* ADMIN */}
+                Minden jóváhagyott felhasználó számára
+                elérhető.
+
+                Admin közvetlen linkből is meg tudja nyitni,
+                de nincs külön menüpontja hozzá.
+            ================================================= */}
+
+            <Route path="/matchday-xi" element={<MatchdayXIPage />} />
+
+            {/* =================================================
+                ADMIN ONLY
+            ================================================= */}
+
             <Route element={<AdminRoute />}>
+              {/* Kezdő 11 Builder */}
+              <Route path="/lineup" element={<LineupBuilder />} />
+
+              {/* Felhasználók kezelése */}
               <Route path="/users" element={<Users />} />
             </Route>
           </Route>
         </Route>
       </Route>
+
+      {/* =====================================================
+          FALLBACK
+      ===================================================== */}
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
