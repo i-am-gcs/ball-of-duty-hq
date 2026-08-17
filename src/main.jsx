@@ -14,6 +14,7 @@ import "./styles/benefit-tracker.css";
 import "./styles/statistics.css";
 import "./styles/seasons.css";
 import "./styles/matches.css";
+import "./styles/lineup.css";
 
 import "./styles/responsive.css";
 import "./styles/theme.css";

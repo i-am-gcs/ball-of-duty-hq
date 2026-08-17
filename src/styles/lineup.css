@@ -1,0 +1,893 @@
+.lineup-page {
+  max-width: 1680px;
+  padding-top: 24px;
+}
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.lineup-toolbar {
+  display: grid;
+  grid-template-columns:
+    minmax(240px, 1.5fr)
+    minmax(180px, 0.7fr)
+    minmax(240px, 1fr);
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.lineup-toolbar label {
+  display: grid;
+  gap: 7px;
+}
+
+.lineup-toolbar label > span {
+  color: var(--bod-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.lineup-toolbar select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid var(--bod-border-strong);
+  border-radius: 11px;
+  outline: none;
+  color: var(--bod-text);
+  background: #0a130c;
+}
+
+.lineup-source-status {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 13px;
+  border: 1px solid var(--bod-border);
+  border-radius: 11px;
+  background: rgba(8, 16, 10, 0.55);
+}
+
+.lineup-source-status__dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--bod-success);
+  box-shadow: 0 0 14px rgba(99, 214, 168, 0.55);
+}
+
+.lineup-source-status strong,
+.lineup-source-status small {
+  display: block;
+}
+
+.lineup-source-status strong {
+  font-size: 13px;
+}
+
+.lineup-source-status small {
+  margin-top: 2px;
+  color: var(--bod-text-muted);
+}
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.lineup-alert {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.lineup-alert--error {
+  border: 1px solid rgba(255, 123, 123, 0.3);
+  color: #ffb1b1;
+  background: rgba(255, 123, 123, 0.08);
+}
+
+.lineup-alert--success {
+  border: 1px solid rgba(99, 214, 168, 0.3);
+  color: var(--bod-success);
+  background: rgba(99, 214, 168, 0.08);
+}
+
+/* =========================================================
+   POLL
+   ========================================================= */
+
+.lineup-poll-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lineup-poll-list > span {
+  color: var(--bod-text-muted);
+  font-size: 12px;
+}
+
+.lineup-poll-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.lineup-poll-list > div span {
+  padding: 7px 10px;
+  border: 1px solid var(--bod-border);
+  border-radius: 999px;
+  color: var(--bod-text-muted);
+  font-size: 11px;
+}
+
+.lineup-poll-list > div span.active {
+  color: var(--bod-gold-bright);
+  border-color: rgba(245, 189, 22, 0.35);
+  background: rgba(245, 189, 22, 0.08);
+}
+
+/* =========================================================
+   WORKSPACE
+   ========================================================= */
+
+.lineup-workspace {
+  display: grid;
+  grid-template-columns: 270px minmax(520px, 1fr) 270px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.lineup-roster,
+.lineup-bench {
+  min-height: 780px;
+  padding: 18px;
+}
+
+.lineup-panel-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lineup-panel-heading h2 {
+  margin: 5px 0 0;
+  font-size: 19px;
+}
+
+.lineup-panel-heading > strong {
+  color: var(--bod-gold-bright);
+  font-size: 25px;
+}
+
+.lineup-help {
+  margin: 0 0 15px;
+  color: var(--bod-text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   ROSTER
+   ========================================================= */
+
+.lineup-roster-list,
+.lineup-bench-list {
+  display: grid;
+  gap: 8px;
+  max-height: 650px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.lineup-player-chip {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid var(--bod-border);
+  border-radius: 11px;
+  color: var(--bod-text);
+  text-align: left;
+  background: rgba(8, 16, 10, 0.55);
+  cursor: grab;
+  transition: 0.18s ease;
+}
+
+.lineup-player-chip:hover,
+.lineup-player-chip--selected {
+  border-color: rgba(245, 189, 22, 0.35);
+  background: rgba(245, 189, 22, 0.08);
+  transform: translateY(-1px);
+}
+
+.lineup-player-chip:active {
+  cursor: grabbing;
+}
+
+/* Avatar */
+
+.lineup-player-chip__avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(245, 189, 22, 0.35);
+  border-radius: 10px;
+  color: #171304;
+  background: linear-gradient(
+    135deg,
+    var(--bod-gold-bright),
+    var(--bod-gold-soft)
+  );
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lineup-player-chip__avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/*
+  A játékos információs része.
+  Fontos: külön blokk legyen, így a név és a
+  "Játékos" felirat nem csúszik egymás mellé.
+*/
+
+.lineup-player-chip > div:not(.lineup-player-chip__avatar) {
+  min-width: 0;
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* Játékos neve */
+
+.lineup-player-chip strong {
+  display: block;
+  width: 100%;
+
+  overflow: hidden;
+
+  color: var(--bod-text);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "Játékos" felirat */
+
+.lineup-player-chip small {
+  display: block;
+
+  color: var(--bod-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* =========================================================
+   PITCH PANEL
+   ========================================================= */
+
+.lineup-pitch-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(245, 189, 22, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(83, 107, 34, 0.18),
+      transparent 55%
+    ),
+    #07100a;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.3),
+    0 20px 60px rgba(0, 0, 0, 0.24);
+}
+
+.lineup-match-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 6px 14px;
+}
+
+.lineup-match-heading h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.lineup-match-heading p {
+  margin: 3px 0 0;
+  color: var(--bod-text-muted);
+  font-size: 12px;
+}
+
+.lineup-formation-badge {
+  padding: 8px 11px;
+  border: 1px solid rgba(245, 189, 22, 0.35);
+  border-radius: 9px;
+  color: var(--bod-gold-bright);
+  background: rgba(245, 189, 22, 0.08);
+  font-weight: 900;
+}
+
+/* =========================================================
+   PITCH
+   ========================================================= */
+
+.lineup-pitch {
+  position: relative;
+  width: min(100%, 780px);
+  aspect-ratio: 0.72;
+  min-height: 690px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(245, 189, 22, 0.65);
+  border-radius: 24px;
+  isolation: isolate;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(245, 189, 22, 0.08),
+      transparent 28%,
+      transparent 72%,
+      rgba(45, 214, 118, 0.08)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.012) 0 22px,
+      rgba(0, 0, 0, 0.025) 22px 44px
+    ),
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(44, 115, 49, 0.5),
+      rgba(5, 19, 10, 0.98) 76%
+    );
+
+  box-shadow:
+    inset 0 0 80px rgba(0, 0, 0, 0.55),
+    0 0 45px rgba(245, 189, 22, 0.08);
+}
+
+.lineup-pitch::before {
+  position: absolute;
+  inset: 3.5%;
+  border: 1px solid rgba(222, 238, 211, 0.55);
+  border-radius: 14px;
+  content: "";
+  pointer-events: none;
+}
+
+.pitch-line {
+  position: absolute;
+  left: 3.5%;
+  right: 3.5%;
+  top: 50%;
+  border-top: 1px solid rgba(223, 237, 212, 0.38);
+  pointer-events: none;
+}
+
+.pitch-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(223, 237, 212, 0.38);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pitch-box {
+  position: absolute;
+  left: 27%;
+  width: 46%;
+  height: 16%;
+  border: 1px solid rgba(223, 237, 212, 0.38);
+  pointer-events: none;
+}
+
+.pitch-box--top {
+  top: 3.5%;
+  border-top: 0;
+}
+
+.pitch-box--bottom {
+  bottom: 3.5%;
+  border-bottom: 0;
+}
+
+.pitch-goal {
+  position: absolute;
+  left: 41%;
+  width: 18%;
+  height: 3%;
+  border: 1px solid rgba(223, 237, 212, 0.5);
+  pointer-events: none;
+}
+
+.pitch-goal--top {
+  top: 3.5%;
+}
+
+.pitch-goal--bottom {
+  bottom: 3.5%;
+}
+
+.pitch-glow {
+  position: absolute;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  filter: blur(45px);
+  opacity: 0.13;
+  pointer-events: none;
+}
+
+.pitch-glow--gold {
+  top: -10%;
+  left: -10%;
+  background: #f5bd16;
+}
+
+.pitch-glow--green {
+  right: -10%;
+  bottom: -10%;
+  background: #38d889;
+}
+
+/* =========================================================
+   PLAYER SLOTS
+   ========================================================= */
+
+.lineup-slot {
+  position: absolute;
+  z-index: 3;
+
+  width: 125px;
+  height: 120px;
+
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================================
+   EMPTY SLOT
+   ========================================================= */
+
+.lineup-slot__empty {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  align-content: center;
+
+  border: 1px dashed rgba(245, 189, 22, 0.48);
+  border-radius: 18px;
+
+  color: var(--bod-gold-bright);
+  background: rgba(6, 14, 8, 0.5);
+
+  box-shadow: 0 0 22px rgba(245, 189, 22, 0.08);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.lineup-slot__empty:hover {
+  border-color: rgba(245, 189, 22, 0.85);
+  background: rgba(245, 189, 22, 0.08);
+  transform: scale(1.04);
+}
+
+.lineup-slot__empty span {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.lineup-slot__empty small {
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.9px;
+}
+
+/* =========================================================
+   PLAYER CARD
+   ========================================================= */
+
+.lineup-player-card {
+  position: relative;
+
+  display: flex;
+
+  width: 100%;
+  height: 100%;
+
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  overflow: visible;
+
+  padding: 8px;
+
+  border: 1px solid rgba(245, 189, 22, 0.68);
+  border-radius: 18px;
+
+  color: var(--bod-text);
+
+  background:
+    radial-gradient(
+      circle at 50% 25%,
+      rgba(245, 189, 22, 0.14),
+      transparent 55%
+    ),
+    linear-gradient(160deg, rgba(24, 43, 17, 0.98), rgba(8, 15, 9, 0.98));
+
+  box-shadow:
+    0 0 26px rgba(245, 189, 22, 0.16),
+    inset 0 0 22px rgba(75, 214, 125, 0.07);
+
+  cursor: grab;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.lineup-player-card:hover {
+  border-color: rgba(245, 189, 22, 0.95);
+
+  box-shadow:
+    0 0 34px rgba(245, 189, 22, 0.25),
+    inset 0 0 24px rgba(75, 214, 125, 0.08);
+
+  transform: translateY(-2px);
+}
+
+.lineup-player-card:active {
+  cursor: grabbing;
+}
+
+/* =========================================================
+   PLAYER AVATAR
+   ========================================================= */
+
+.lineup-player-card img {
+  display: block;
+
+  width: 48px;
+  height: 48px;
+
+  max-width: 48px;
+  max-height: 48px;
+
+  flex: 0 0 48px;
+
+  object-fit: cover;
+  object-position: center;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(245, 189, 22, 0.5);
+  border-radius: 50%;
+
+  background: #0b160d;
+
+  box-shadow: 0 0 14px rgba(245, 189, 22, 0.18);
+}
+
+.lineup-player-card > div:has(> img) {
+  display: flex;
+
+  width: 50px;
+  height: 50px;
+
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 50px;
+
+  overflow: hidden;
+}
+
+/* =========================================================
+   PLAYER NUMBER
+   ========================================================= */
+
+.lineup-player-card__number {
+  margin-top: 3px;
+
+  color: var(--bod-gold-bright);
+
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* =========================================================
+   PLAYER NAME
+   ========================================================= */
+
+.lineup-player-card__name {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  margin-top: 7px;
+
+  overflow: hidden;
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.1;
+
+  text-align: center;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  opacity: 1;
+  visibility: visible;
+
+  position: relative;
+  z-index: 5;
+
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+/* =========================================================
+   PLAYER POSITION
+   ========================================================= */
+
+.lineup-player-card__position {
+  margin-top: 6px;
+
+  color: var(--bod-success);
+
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: 1px;
+
+  line-height: 1;
+}
+
+/* =========================================================
+   BENCH
+   ========================================================= */
+
+.lineup-bench-player {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+
+  padding: 10px;
+
+  border: 1px solid var(--bod-border);
+  border-radius: 10px;
+
+  color: var(--bod-text);
+  text-align: left;
+
+  background: rgba(8, 16, 10, 0.55);
+
+  cursor: pointer;
+}
+
+.lineup-bench-player:hover {
+  border-color: rgba(245, 189, 22, 0.3);
+}
+
+.lineup-bench-player > span {
+  color: var(--bod-gold-bright);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.lineup-bench-player strong {
+  overflow: hidden;
+
+  font-size: 12px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineup-bench-player small {
+  color: var(--bod-text-muted);
+  font-size: 9px;
+}
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+
+.lineup-save {
+  width: 100%;
+  margin-top: 18px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1250px) {
+  .lineup-workspace {
+    grid-template-columns: 230px minmax(450px, 1fr) 230px;
+  }
+
+  .lineup-slot {
+    width: 105px;
+    height: 102px;
+  }
+
+  .lineup-player-card {
+    border-radius: 16px;
+    padding: 7px;
+  }
+
+  .lineup-player-card img {
+    width: 42px;
+    height: 42px;
+
+    max-width: 42px;
+    max-height: 42px;
+
+    flex-basis: 42px;
+  }
+
+  .lineup-player-card > div:has(> img) {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  .lineup-player-card__name {
+    font-size: 12px;
+  }
+
+  .lineup-player-card__position {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 980px) {
+  .lineup-toolbar,
+  .lineup-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-roster,
+  .lineup-bench {
+    min-height: 0;
+  }
+
+  .lineup-roster-list,
+  .lineup-bench-list {
+    max-height: 360px;
+  }
+
+  .lineup-pitch {
+    min-height: 620px;
+  }
+
+  .lineup-slot {
+    width: 95px;
+    height: 94px;
+  }
+
+  .lineup-player-card img {
+    width: 38px;
+    height: 38px;
+
+    max-width: 38px;
+    max-height: 38px;
+
+    flex-basis: 38px;
+  }
+
+  .lineup-player-card > div:has(> img) {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .lineup-player-card__name {
+    font-size: 11px;
+  }
+
+  .lineup-player-card__position {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 600px) {
+  .lineup-page {
+    padding-top: 16px;
+  }
+
+  .lineup-pitch {
+    min-height: 520px;
+    border-radius: 16px;
+  }
+
+  .lineup-slot {
+    width: 72px;
+    height: 74px;
+  }
+
+  .lineup-player-card {
+    border-radius: 12px;
+    padding: 5px;
+  }
+
+  .lineup-player-card img {
+    width: 28px;
+    height: 28px;
+
+    max-width: 28px;
+    max-height: 28px;
+
+    flex-basis: 28px;
+  }
+
+  .lineup-player-card > div:has(> img) {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .lineup-player-card__name {
+    margin-top: 4px;
+    font-size: 8px;
+  }
+
+  .lineup-player-card__position {
+    margin-top: 3px;
+    font-size: 8px;
+  }
+
+  .lineup-player-card__number {
+    font-size: 8px;
+  }
+}

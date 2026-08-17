@@ -20,7 +20,14 @@ export function getCurrentSeason() {
 
   const activeSeason = seasons.find((season) => {
     const start = new Date(`${season.period.start}T00:00:00`);
-    const end = new Date(`${season.period.end}T23:59:59`);
+
+    const end = season.period.end
+      ? new Date(`${season.period.end}T23:59:59`)
+      : null;
+
+    if (!end) {
+      return today >= start;
+    }
 
     return today >= start && today <= end;
   });
@@ -64,12 +71,6 @@ async function getSeasonBenefitData(seasonId) {
 /**
  * Egy játékos Benefit adatainak frissítése
  * az aktuális / megadott szezonban.
- *
- * Például:
- *
- * updatePlayerBenefit(3, playerId, {
- *   penaltyPoints: 2,
- * });
  */
 export async function updatePlayerBenefit(seasonId, playerId, changes) {
   const playerBenefitReference = ref(
@@ -118,6 +119,9 @@ export function getBenefitStatus({
   attendanceRate,
   votingRate,
 }) {
+  /**
+   * Manuális büntetőpont.
+   */
   if (penaltyPoints >= 5) {
     return {
       key: "blocked",
@@ -126,10 +130,20 @@ export function getBenefitStatus({
     };
   }
 
-  if (
-    (attendanceRate !== null && attendanceRate < 50) ||
-    (votingRate !== null && votingRate < 50)
-  ) {
+  /**
+   * Csak a LE NEM ADOTT SZAVAZAT számít.
+   *
+   * A votingRate azt mutatja, hogy a játékos
+   * a számára releváns pollok hány százalékában
+   * adott le ténylegesen szavazatot.
+   *
+   * IGEN = szavazott
+   * NEM = szavazott
+   * nincs szavazat = nem szavazott
+   *
+   * A jelenléti százalékot itt NEM használjuk.
+   */
+  if (votingRate !== null && votingRate < 50) {
     return {
       key: "warning",
       label: "Figyelem",
@@ -190,8 +204,6 @@ function findVpgPlayer(vpgPlayerMap, player) {
 
 /**
  * Egy szezon összes VPG statisztikájának betöltése.
- *
- * Egy szezonban minden versenyt csak egyszer kérünk le.
  */
 async function loadSeasonVpgData(season) {
   if (!season) {
@@ -380,6 +392,190 @@ export function calculateCombinedPoints(hpclPoints, balkanPoints) {
   return Math.round(((hpclPoints + balkanPoints) / 2) * 10) / 10;
 }
 
+/* =========================================================
+   DISCORD BENEFIT LOGIKA
+   ========================================================= */
+
+/**
+ * Discord válasz szövegének normalizálása.
+ *
+ * IGEN / igen / IGEN  /  igen
+ * mind ugyanaz lesz.
+ */
+function normalizeDiscordAnswer(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Nálunk minden Benefit poll:
+ *
+ * ID 1 = IGEN
+ * ID 2 = NEM
+ *
+ * Csak akkor tekintjük IGEN-nek,
+ * ha mindkét feltétel teljesül.
+ */
+function isYesAnswer(answer) {
+  if (!answer) {
+    return false;
+  }
+
+  const answerId = Number(answer.id);
+
+  const answerText = normalizeDiscordAnswer(answer.text);
+
+  return answerId === 1 && answerText === "igen";
+}
+
+/**
+ * Megnézzük, hogy a játékos leadott-e szavazatot.
+ */
+function hasVoted(playerResult) {
+  return playerResult?.status === "VOTED";
+}
+
+/**
+ * Megnézzük, hogy a játékos IGEN-nel szavazott-e.
+ */
+function hasVotedYes(playerResult) {
+  if (!hasVoted(playerResult)) {
+    return false;
+  }
+
+  return (playerResult.answers ?? []).some((answer) => isYesAnswer(answer));
+}
+
+/**
+ * Discord szavazási adatok betöltése.
+ *
+ * A forrás:
+ *
+ * discordPolls
+ * +
+ * discordPollResults
+ *
+ * A szezonhoz tartozást KIZÁRÓLAG:
+ *
+ * poll.closedAt
+ *
+ * határozza meg.
+ *
+ * Releváns poll egy játékosnak:
+ *
+ * playerResults között szerepel
+ * az adott playerId.
+ */
+async function loadSeasonDiscordVoteData(season) {
+  const [pollsSnapshot, resultsSnapshot] = await Promise.all([
+    get(ref(database, "discordPolls")),
+    get(ref(database, "discordPollResults")),
+  ]);
+
+  if (!pollsSnapshot.exists() || !resultsSnapshot.exists()) {
+    return {};
+  }
+
+  const pollsData = pollsSnapshot.val() ?? {};
+
+  const resultsData = resultsSnapshot.val() ?? {};
+
+  const seasonStart = new Date(`${season.period.start}T00:00:00`).getTime();
+
+  const seasonEnd = season.period.end
+    ? new Date(`${season.period.end}T23:59:59`).getTime()
+    : Infinity;
+
+  const polls = Object.entries(pollsData)
+    .map(([pollId, poll]) => ({
+      id: pollId,
+      ...poll,
+    }))
+    .filter((poll) => {
+      /**
+       * NINCS category szűrés!
+       *
+       * A Benefit Trackernek minden olyan
+       * lezárt Discord poll releváns lehet,
+       * amelyben az adott játékos szerepel
+       * playerResults alatt.
+       */
+
+      if (!poll?.closedAt) {
+        return false;
+      }
+
+      const closedAt = new Date(poll.closedAt).getTime();
+
+      if (Number.isNaN(closedAt)) {
+        return false;
+      }
+
+      return closedAt >= seasonStart && closedAt <= seasonEnd;
+    });
+
+  const playerVoteData = {};
+
+  for (const poll of polls) {
+    const pollResults = resultsData[poll.id];
+
+    if (!pollResults?.playerResults) {
+      continue;
+    }
+
+    const playerResults = Object.values(pollResults.playerResults);
+
+    for (const playerResult of playerResults) {
+      const playerId = playerResult?.playerId;
+
+      if (!playerId) {
+        continue;
+      }
+
+      if (!playerVoteData[playerId]) {
+        playerVoteData[playerId] = {
+          attended: 0,
+          participated: 0,
+          total: 0,
+        };
+      }
+
+      /**
+       * Ez a poll az adott játékos
+       * számára releváns.
+       */
+      playerVoteData[playerId].total += 1;
+
+      /**
+       * Szavazás:
+       *
+       * leadott szavazat /
+       * releváns pollok
+       */
+      if (hasVoted(playerResult)) {
+        playerVoteData[playerId].participated += 1;
+      }
+
+      /**
+       * Jelenlét:
+       *
+       * IGEN /
+       * releváns pollok
+       */
+      if (hasVotedYes(playerResult)) {
+        playerVoteData[playerId].attended += 1;
+      }
+    }
+  }
+
+  return playerVoteData;
+}
+
+/* =========================================================
+   CURRENT BENEFIT BOARD
+   ========================================================= */
+
 /**
  * Aktuális szezon Benefit Board.
  */
@@ -399,9 +595,24 @@ export async function getCurrentBenefitBoard() {
   const firebasePlayers = await getPlayers();
 
   /**
-   * Aktuális szezon Benefit adatai Firebase-ből.
+   * Manuális / Benefit adatok.
+   *
+   * Innen továbbra is:
+   *
+   * - büntetőpont
+   * - TOTW
    */
   const benefitData = await getSeasonBenefitData(season.id);
+
+  /**
+   * Discord szavazási adatok.
+   *
+   * Automatikusan:
+   *
+   * - jelenlét
+   * - szavazás
+   */
+  const discordVoteData = await loadSeasonDiscordVoteData(season);
 
   /**
    * Aktuális szezon VPG adatok.
@@ -409,21 +620,21 @@ export async function getCurrentBenefitBoard() {
   const currentSeasonVpgData = await loadSeasonVpgData(season);
 
   /**
-   * Lezárt szezonok VPG adatai.
-   *
-   * Minden lezárt szezon csak egyszer kerül lekérésre.
+   * Korábbi lezárt szezonok VPG adatai
+   * a loyalty számításához.
    */
   const completedSeasons = getCompletedSeasons();
 
   const completedSeasonData = await Promise.all(
     completedSeasons.map(async (completedSeason) => ({
       season: completedSeason,
+
       vpgData: await loadSeasonVpgData(completedSeason),
     })),
   );
 
   /**
-   * Aktuális HPCL / Balkan versenyek.
+   * Aktuális HPCL / Balkan competition.
    */
   const hpclCompetition = findHpclCompetition(
     currentSeasonVpgData.competitions,
@@ -434,7 +645,7 @@ export async function getCurrentBenefitBoard() {
   );
 
   /**
-   * Aktuális verseny stat map-ek.
+   * Competition statok.
    */
   const hpclStatsData = findCompetitionStats(
     currentSeasonVpgData,
@@ -451,11 +662,7 @@ export async function getCurrentBenefitBoard() {
   const balkanPlayerMap = balkanStatsData?.playerMap ?? new Map();
 
   /**
-   * Aktív squad összeállítása.
-   *
-   * A Benefit Tracker kizárólag az aktív játékosokat mutatja.
-   * A Firebase-ből érkező admin / technikai / inaktív rekordok
-   * ezért nem kerülnek bele a Benefit Boardba.
+   * Csak aktív squad játékosok.
    */
   const activePlayers = firebasePlayers.filter(
     (player) => player.status === "Aktív",
@@ -464,20 +671,40 @@ export async function getCurrentBenefitBoard() {
   const rows = activePlayers.map((player) => {
     const benefit = benefitData[player.id] ?? {};
 
-    const attendance = benefit.attendance ?? {
-      attended: 0,
-      total: 0,
-    };
+    /**
+     * Discord adatok.
+     */
+    const discordVote = discordVoteData[player.id] ?? null;
 
-    const voting = benefit.voting ?? {
-      participated: 0,
-      total: 0,
-    };
+    const attendance = discordVote
+      ? {
+          attended: discordVote.attended,
+
+          total: discordVote.total,
+        }
+      : {
+          attended: 0,
+          total: 0,
+        };
+
+    const voting = discordVote
+      ? {
+          participated: discordVote.participated,
+
+          total: discordVote.total,
+        }
+      : {
+          participated: 0,
+          total: 0,
+        };
 
     const attendanceRate = calculateAttendanceRate(attendance);
 
     const votingRate = calculateVotingRate(voting);
 
+    /**
+     * Büntetőpont továbbra is manuális.
+     */
     const penaltyPoints = Number(benefit.penaltyPoints ?? 0);
 
     /**
@@ -486,23 +713,26 @@ export async function getCurrentBenefitBoard() {
     const loyalty = calculateLoyaltyLevel(player, completedSeasonData);
 
     /**
-     * Aktuális VPG játékos.
+     * VPG játékos keresése.
      */
     const hpclPlayer = findVpgPlayer(hpclPlayerMap, player);
 
     const balkanPlayer = findVpgPlayer(balkanPlayerMap, player);
 
     /**
-     * Aktuális VPG pontok.
+     * HPCL pont.
      */
     const hpclPoints =
       hpclPlayer?.points !== undefined ? Number(hpclPlayer.points) : null;
 
+    /**
+     * Balkan / BSL pont.
+     */
     const balkanPoints =
       balkanPlayer?.points !== undefined ? Number(balkanPlayer.points) : null;
 
     /**
-     * Összes aktuális VPG pont.
+     * Összes VPG pont.
      */
     let vpgPoints = null;
 
@@ -511,7 +741,7 @@ export async function getCurrentBenefitBoard() {
     }
 
     /**
-     * Kombinált pont.
+     * HPCL + Balkan átlag.
      */
     const combinedPoints = calculateCombinedPoints(hpclPoints, balkanPoints);
 
@@ -519,9 +749,10 @@ export async function getCurrentBenefitBoard() {
      * Aktuális szezon meccsszám.
      */
     const matchesPlayed =
-      (hpclPlayer?.matchesPlayed ?? 0) + (balkanPlayer?.matchesPlayed ?? 0);
+      Number(hpclPlayer?.matchesPlayed ?? 0) +
+      Number(balkanPlayer?.matchesPlayed ?? 0);
 
-    const hasCurrentVpgStats = hpclPlayer || balkanPlayer;
+    const hasCurrentVpgStats = Boolean(hpclPlayer || balkanPlayer);
 
     const finalMatchesPlayed = hasCurrentVpgStats ? matchesPlayed : null;
 
@@ -540,23 +771,14 @@ export async function getCurrentBenefitBoard() {
       playerName:
         player.nickname ?? player.username ?? player.name ?? "Ismeretlen",
 
-      /**
-       * Firebase profilból.
-       */
       vpgUsername: player.vpgUsername ?? "",
 
-      /**
-       * Automatikus loyalty.
-       */
       loyaltyLevel: loyalty.level,
 
       loyaltyIcon: loyalty.icon,
 
       completedSeasons: loyalty.completedSeasons,
 
-      /**
-       * Aktuális szezon VPG.
-       */
       matchesPlayed: finalMatchesPlayed,
 
       vpgPoints,
@@ -568,7 +790,7 @@ export async function getCurrentBenefitBoard() {
       combinedPoints,
 
       /**
-       * Discord / Benefit.
+       * Discordból automatikus.
        */
       attendance: {
         attended: attendance.attended,
@@ -587,7 +809,7 @@ export async function getCurrentBenefitBoard() {
       },
 
       /**
-       * Admin által kezelhető.
+       * Manuális admin adatok.
        */
       penaltyPoints,
 

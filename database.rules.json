@@ -58,6 +58,10 @@
       ".read": "auth != null && auth.token.admin === true",
       ".write": false
     },
+    "lineups": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": "auth != null && auth.token.admin === true"
+    },
     "settings": {
       ".read": "auth != null && auth.token.admin === true",
       ".write": "auth != null && auth.token.admin === true"
