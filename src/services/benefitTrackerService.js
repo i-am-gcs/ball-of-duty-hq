@@ -451,9 +451,17 @@ export async function getCurrentBenefitBoard() {
   const balkanPlayerMap = balkanStatsData?.playerMap ?? new Map();
 
   /**
-   * Aktuális squad összeállítása.
+   * Aktív squad összeállítása.
+   *
+   * A Benefit Tracker kizárólag az aktív játékosokat mutatja.
+   * A Firebase-ből érkező admin / technikai / inaktív rekordok
+   * ezért nem kerülnek bele a Benefit Boardba.
    */
-  const rows = firebasePlayers.map((player) => {
+  const activePlayers = firebasePlayers.filter(
+    (player) => player.status === "Aktív",
+  );
+
+  const rows = activePlayers.map((player) => {
     const benefit = benefitData[player.id] ?? {};
 
     const attendance = benefit.attendance ?? {

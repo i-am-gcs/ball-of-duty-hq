@@ -92,9 +92,54 @@ function getPollAnswers(poll) {
 }
 
 /**
+ * Meglévő poll betöltése Firebase-ből.
+ */
+async function getExistingPoll(pollId) {
+  const snapshot = await database.ref(`discordPolls/${pollId}`).once("value");
+
+  return snapshot.exists() ? snapshot.val() : null;
+}
+
+/**
+ * A poll lezárási időpontjának meghatározása.
+ *
+ * - Amíg nincs lezárva: null
+ * - Normál lejárat esetén: Discord expiry időpontja
+ * - Korai lezárás esetén: az a pillanat, amikor a bot először
+ *   lezártként látja a pollt
+ * - Ha Firebase-ben már van closedAt, azt nem írjuk felül.
+ *
+ * A Benefit Tracker kizárólag ezt a mezőt használja a szezonhoz
+ * tartozás meghatározására.
+ */
+function getClosedAt(poll, existingPoll) {
+  // Ha már van lezárt időpont Firebase-ben,
+  // azt nem írjuk felül.
+  if (existingPoll?.closedAt) {
+    return existingPoll.closedAt;
+  }
+
+  // Ha még nincs véglegesítve a poll,
+  // akkor még nincs closedAt.
+  if (!poll.resultsFinalized) {
+    return null;
+  }
+
+  const now = new Date();
+
+  // Normál lejárat esetén az expiresAt lesz a closedAt.
+  if (poll.expiresAt && poll.expiresAt <= now) {
+    return poll.expiresAt.toISOString();
+  }
+
+  // Korai lezárás esetén az észlelés időpontját használjuk.
+  return now.toISOString();
+}
+
+/**
  * Poll teljes adatának Firebase-kompatibilis formája.
  */
-function serializePoll(message, category) {
+function serializePoll(message, category, existingPoll = null) {
   const { poll } = message;
 
   return {
@@ -115,6 +160,9 @@ function serializePoll(message, category) {
     allowMultiselect: poll.allowMultiselect,
 
     expiresAt: poll.expiresAt?.toISOString() || null,
+
+    // EZ AZ ÚJ MEZŐ
+    closedAt: getClosedAt(poll, existingPoll),
 
     resultsFinalized: poll.resultsFinalized,
 
@@ -302,7 +350,11 @@ export async function syncPollMessage(message, category) {
     return false;
   }
 
-  const pollData = serializePoll(message, category);
+  // Meglévő Firebase poll lekérése,
+  // hogy a már elmentett closedAt megmaradjon.
+  const existingPoll = await getExistingPoll(message.id);
+
+  const pollData = serializePoll(message, category, existingPoll);
 
   const votesByUser = await getVotesByUser(message.poll);
 

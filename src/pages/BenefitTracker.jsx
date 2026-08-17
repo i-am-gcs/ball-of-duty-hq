@@ -4,9 +4,9 @@ import "../styles/benefit-tracker.css";
 import {
   getCurrentBenefitBoard,
   getBenefitStatus,
+  updatePlayerBenefit,
 } from "../services/benefitTrackerService.js";
-import { ref, update } from "firebase/database";
-import { database } from "../firebase/firebase";
+import { useAuth } from "../contexts/AuthContext";
 
 const loyaltyLevels = [
   {
@@ -504,6 +504,8 @@ Egy klubot nem egyetlen szezon épít fel. Egy klubot azok az emberek építenek
 function BenefitTracker() {
   const [activeDocument, setActiveDocument] = useState(null);
 
+  const { isAdmin } = useAuth();
+
   const [benefitBoard, setBenefitBoard] = useState({
     season: null,
     players: [],
@@ -552,7 +554,11 @@ function BenefitTracker() {
     };
   }, []);
 
-  function changePenaltyPoints(playerId, delta) {
+  function changeManualValue(playerId, field, delta) {
+    if (!isAdmin) {
+      return;
+    }
+
     setBenefitBoard((current) => ({
       ...current,
       players: current.players.map((player) => {
@@ -560,16 +566,21 @@ function BenefitTracker() {
           return player;
         }
 
-        const nextPenaltyPoints = Math.max(
-          0,
-          Number(player.penaltyPoints ?? 0) + delta,
-        );
+        const currentValue = Number(player[field] ?? 0);
+        const nextValue = Math.max(0, currentValue + delta);
+
+        const nextPlayer = {
+          ...player,
+          [field]: nextValue,
+        };
 
         return {
-          ...player,
-          penaltyPoints: nextPenaltyPoints,
+          ...nextPlayer,
           status: getBenefitStatus({
-            penaltyPoints: nextPenaltyPoints,
+            penaltyPoints:
+              field === "penaltyPoints"
+                ? nextValue
+                : Number(player.penaltyPoints ?? 0),
             attendanceRate: player.attendance?.rate ?? null,
             votingRate: player.voting?.rate ?? null,
           }),
@@ -581,8 +592,8 @@ function BenefitTracker() {
     setSaveError("");
   }
 
-  async function savePenaltyPoints(player) {
-    if (!benefitBoard.season?.id || !player?.playerId) {
+  async function saveManualBenefit(player) {
+    if (!isAdmin || !benefitBoard.season?.id || !player?.playerId) {
       return;
     }
 
@@ -591,20 +602,18 @@ function BenefitTracker() {
       setSaveMessage("");
       setSaveError("");
 
-      await update(
-        ref(
-          database,
-          `benefitTracker/${benefitBoard.season.id}/players/${player.playerId}`,
-        ),
-        {
-          penaltyPoints: Number(player.penaltyPoints ?? 0),
-        },
-      );
+      const totwAppearances = Math.max(0, Number(player.totwAppearances ?? 0));
 
-      setSaveMessage(`${player.playerName} büntetőpontjai mentve.`);
+      await updatePlayerBenefit(benefitBoard.season.id, player.playerId, {
+        penaltyPoints: Math.max(0, Number(player.penaltyPoints ?? 0)),
+        totwAppearances,
+        totwBonus: totwAppearances * 500,
+      });
+
+      setSaveMessage(`${player.playerName} manuális Benefit adatai mentve.`);
     } catch (error) {
-      console.error("Benefit büntetőpont mentési hiba:", error);
-      setSaveError("Nem sikerült elmenteni a büntetőpontokat.");
+      console.error("Benefit manuális adat mentési hiba:", error);
+      setSaveError("Nem sikerült elmenteni a manuális Benefit adatokat.");
     } finally {
       setSavingPlayerId(null);
     }
@@ -761,7 +770,7 @@ function BenefitTracker() {
                   <th>Bünti</th>
                   <th>ToTW</th>
                   <th>Státusz</th>
-                  <th>Művelet</th>
+                  {isAdmin && <th>Művelet</th>}
                 </tr>
               </thead>
 
@@ -800,48 +809,99 @@ function BenefitTracker() {
                     </td>
 
                     <td className="numeric-cell">
-                      <div className="benefit-penalty-editor">
-                        <button
-                          type="button"
-                          className="benefit-penalty-button"
-                          onClick={() =>
-                            changePenaltyPoints(player.playerId, -1)
-                          }
-                          disabled={Number(player.penaltyPoints ?? 0) <= 0}
-                          aria-label={`${player.playerName} büntetőpont csökkentése`}
-                        >
-                          −
-                        </button>
+                      {isAdmin ? (
+                        <div className="benefit-penalty-editor">
+                          <button
+                            type="button"
+                            className="benefit-penalty-button"
+                            onClick={() =>
+                              changeManualValue(
+                                player.playerId,
+                                "penaltyPoints",
+                                -1,
+                              )
+                            }
+                            disabled={Number(player.penaltyPoints ?? 0) <= 0}
+                            aria-label={`${player.playerName} büntetőpont csökkentése`}
+                          >
+                            −
+                          </button>
 
-                        <span
-                          className={
-                            player.penaltyPoints >= 5
-                              ? "penalty-danger"
-                              : player.penaltyPoints > 0
-                                ? "penalty-warning"
-                                : "penalty-clean"
-                          }
-                        >
-                          {player.penaltyPoints}
-                        </span>
+                          <span
+                            className={
+                              player.penaltyPoints >= 5
+                                ? "penalty-danger"
+                                : player.penaltyPoints > 0
+                                  ? "penalty-warning"
+                                  : "penalty-clean"
+                            }
+                          >
+                            {player.penaltyPoints}
+                          </span>
 
-                        <button
-                          type="button"
-                          className="benefit-penalty-button"
-                          onClick={() =>
-                            changePenaltyPoints(player.playerId, 1)
-                          }
-                          aria-label={`${player.playerName} büntetőpont növelése`}
-                        >
-                          +
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            className="benefit-penalty-button"
+                            onClick={() =>
+                              changeManualValue(
+                                player.playerId,
+                                "penaltyPoints",
+                                1,
+                              )
+                            }
+                            aria-label={`${player.playerName} büntetőpont növelése`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        player.penaltyPoints
+                      )}
                     </td>
 
                     <td className="numeric-cell">
-                      {player.totwBonus > 0
-                        ? `${player.totwBonus.toLocaleString("hu-HU")} Ft`
-                        : "–"}
+                      {isAdmin ? (
+                        <div className="benefit-penalty-editor">
+                          <button
+                            type="button"
+                            className="benefit-penalty-button"
+                            onClick={() =>
+                              changeManualValue(
+                                player.playerId,
+                                "totwAppearances",
+                                -1,
+                              )
+                            }
+                            disabled={Number(player.totwAppearances ?? 0) <= 0}
+                            aria-label={`${player.playerName} ToTW szereplés csökkentése`}
+                          >
+                            −
+                          </button>
+
+                          <span>{player.totwAppearances ?? 0}</span>
+
+                          <button
+                            type="button"
+                            className="benefit-penalty-button"
+                            onClick={() =>
+                              changeManualValue(
+                                player.playerId,
+                                "totwAppearances",
+                                1,
+                              )
+                            }
+                            aria-label={`${player.playerName} ToTW szereplés növelése`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <span>
+                          {player.totwAppearances > 0
+                            ? `${player.totwAppearances} × 500 Ft`
+                            : "–"}
+                        </span>
+                      )}
                     </td>
 
                     <td>
@@ -852,18 +912,20 @@ function BenefitTracker() {
                       </span>
                     </td>
 
-                    <td>
-                      <button
-                        type="button"
-                        className="button benefit-save-button"
-                        disabled={savingPlayerId === player.playerId}
-                        onClick={() => savePenaltyPoints(player)}
-                      >
-                        {savingPlayerId === player.playerId
-                          ? "Mentés..."
-                          : "Mentés"}
-                      </button>
-                    </td>
+                    {isAdmin && (
+                      <td>
+                        <button
+                          type="button"
+                          className="button benefit-save-button"
+                          disabled={savingPlayerId === player.playerId}
+                          onClick={() => saveManualBenefit(player)}
+                        >
+                          {savingPlayerId === player.playerId
+                            ? "Mentés..."
+                            : "Mentés"}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
