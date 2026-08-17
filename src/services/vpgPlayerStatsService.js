@@ -78,6 +78,35 @@ export function hasVpgPlayerStats(competition) {
   return Boolean(getCompetitionVpgSeasonId(competition));
 }
 
+/**
+ * VPG statisztikai competitionök lekérése.
+ *
+ * FONTOS:
+ *
+ * A VPG statisztikai egysége a VPG seasonId.
+ *
+ * Példa:
+ *
+ * Balkan Summer League
+ *   seasonId: 18
+ *
+ * Balkan Cup
+ *   seasonId: 18
+ *
+ * Ezek az ALL statisztikában EGYETLEN
+ * VPG statisztikai szezonként jelennek meg.
+ *
+ * Ugyanez a jövőben:
+ *
+ * Balkan Summer League -> 29
+ * Balkan Cup           -> 29
+ *
+ * esetén automatikusan egyetlen Balkan 29
+ * statisztikai egységet eredményez.
+ *
+ * Konkrét competition kiválasztásánál viszont
+ * továbbra is az eredeti competitiont adjuk vissza.
+ */
 export function getVpgCompetitions(season, competitionId = "ALL") {
   if (!season) {
     return [];
@@ -87,13 +116,42 @@ export function getVpgCompetitions(season, competitionId = "ALL") {
     hasVpgPlayerStats(competition),
   );
 
-  if (!competitionId || competitionId === "ALL") {
-    return competitions;
+  /*
+   * Konkrét competition kiválasztása.
+   *
+   * Itt NEM deduplikálunk seasonId alapján.
+   *
+   * Ha a felhasználó konkrétan egy competitiont választ,
+   * akkor azt kapja vissza.
+   */
+  if (competitionId && competitionId !== "ALL") {
+    return competitions.filter(
+      (competition) => String(competition.id) === String(competitionId),
+    );
   }
 
-  return competitions.filter(
-    (competition) => String(competition.id) === String(competitionId),
-  );
+  /*
+   * ALL statisztika.
+   *
+   * Egy VPG seasonId csak egyszer szerepelhet.
+   */
+  const uniqueByVpgSeason = new Map();
+
+  for (const competition of competitions) {
+    const vpgSeasonId = getCompetitionVpgSeasonId(competition);
+
+    if (!vpgSeasonId) {
+      continue;
+    }
+
+    const key = String(vpgSeasonId);
+
+    if (!uniqueByVpgSeason.has(key)) {
+      uniqueByVpgSeason.set(key, competition);
+    }
+  }
+
+  return [...uniqueByVpgSeason.values()];
 }
 
 /* =========================================================
@@ -115,13 +173,9 @@ export async function getVpgTeamLeaderboard(
   const params = new URLSearchParams();
 
   params.set("leaderboard", leaderboard);
-
   params.set("weekly", String(weekly));
-
   params.set("season", String(season));
-
   params.set("limit", String(limit));
-
   params.set("offset", String(offset));
 
   const url =
@@ -218,19 +272,17 @@ export function normalizeVpgPlayerStat(player) {
     points: Number(player.points ?? 0),
 
     /*
-     * FONTOS:
-     * Ez a VPG által adott rating.
+     * VPG által adott rating.
      *
-     * Ha egy játékos több pozíciós
-     * leaderboardon szerepel, az
-     * össze lesz adva.
+     * Ha egy játékos több pozíciós leaderboardon
+     * szerepel, az össze lesz adva.
      */
     matchRating: Number(player.match_rating ?? 0),
 
     /*
-     * A meccsszámot később MAX alapján
-     * kezeljük, mert ugyanaz a játékos
-     * több pozícióban is szerepelhet.
+     * A meccsszámot később MAX alapján kezeljük,
+     * mert ugyanaz a játékos több pozíciós leaderboardon
+     * is szerepelhet.
      */
     matchesPlayed: Number(player.matches_played ?? 0),
 
@@ -338,8 +390,7 @@ function mergePlayerStats(existing, incoming) {
 
   /*
    * A százalékos / rate statoknál
-   * megtartjuk az első tényleges
-   * értéket.
+   * megtartjuk az első tényleges értéket.
    *
    * Ezeket nem adjuk össze.
    */
@@ -463,11 +514,26 @@ export async function getSeasonAllCompetitionPlayerStats({
       const existing = playersByUsername.get(key);
 
       /*
-       * Minden competition külön
-       * VPG szezon / versenysorozat,
-       * ezért itt már összeadjuk
-       * a meccseket.
+       * Itt már valóban külön VPG seasonök
+       * kerülnek összeadásra.
+       *
+       * Például:
+       *
+       * HPCL 14
+       * +
+       * Balkan 18
+       *
+       * Ez helyes.
+       *
+       * Balkan Summer League 18
+       * +
+       * Balkan Cup 18
+       *
+       * viszont már nem kerülhet ide kétszer,
+       * mert a getVpgCompetitions() ALL módban
+       * seasonId alapján deduplikál.
        */
+
       existing._competitionMatches += player.matchesPlayed;
 
       /*
@@ -513,8 +579,7 @@ export async function getSeasonAllCompetitionPlayerStats({
 
       /*
        * Rate / százalékos statok:
-       * csak az első nem-null értéket
-       * tartjuk meg.
+       * csak az első nem-null értéket tartjuk meg.
        */
       if (existing.passAccuracy == null && player.passAccuracy != null) {
         existing.passAccuracy = player.passAccuracy;
@@ -751,6 +816,17 @@ export async function getSeasonStatistics({
 
     competitionName: isAll ? "Összes" : (competitions[0].name ?? null),
 
+    /*
+     * Az ALL statisztikában már a VPG seasonök
+     * reprezentálják a statisztikai egységeket.
+     *
+     * Ezért például:
+     *
+     * Balkan Summer League 18
+     * Balkan Cup 18
+     *
+     * csak egyszer jelenik meg.
+     */
     competitions: competitions.map((competition) => ({
       id: competition.id,
 
