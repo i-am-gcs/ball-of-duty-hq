@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
 import { useAuth } from "../contexts/AuthContext";
 import { getUpcomingVpgMatches } from "../services/vpgMatchService";
+
 import {
   buildCandidateMap,
   FORMATIONS,
@@ -11,6 +12,7 @@ import {
   getMatchDate,
   saveLineup,
 } from "../services/lineupService";
+
 import {
   getActiveSeason,
   getSeasonVpgCompetitions,
@@ -42,7 +44,139 @@ function getPlayerInitials(player) {
     .toUpperCase();
 }
 
-function PlayerChip({ player, onDragStart, onClick, selected, readOnly }) {
+/* =========================================================
+   FORMATION CONNECTIONS
+   ========================================================= */
+
+const FORMATION_CONNECTIONS = {
+  "4-3-3": [
+    ["lb", "lcb"],
+    ["lcb", "rcb"],
+    ["rcb", "rb"],
+
+    ["lcb", "cdm"],
+    ["rcb", "cdm"],
+
+    ["cdm", "lcm"],
+    ["cdm", "rcm"],
+
+    ["lcm", "lw"],
+    ["rcm", "rw"],
+
+    ["lw", "cf"],
+    ["rw", "cf"],
+  ],
+
+  "4-2-3-1": [
+    ["lb", "lcb"],
+    ["lcb", "rcb"],
+    ["rcb", "rb"],
+
+    ["lcb", "ldm"],
+    ["rcb", "rdm"],
+
+    ["ldm", "rdm"],
+
+    ["ldm", "cam"],
+    ["rdm", "cam"],
+
+    ["cam", "lam"],
+    ["cam", "ram"],
+
+    ["lam", "st"],
+    ["ram", "st"],
+  ],
+
+  "4-4-2": [
+    ["lb", "lcb"],
+    ["lcb", "rcb"],
+    ["rcb", "rb"],
+
+    ["lcb", "lcm"],
+    ["rcb", "rcm"],
+
+    ["lm", "lcm"],
+    ["lcm", "rcm"],
+    ["rcm", "rm"],
+
+    ["lcm", "ls"],
+    ["rcm", "rs"],
+
+    ["ls", "rs"],
+  ],
+
+  "4-1-2-1-2": [
+    ["lb", "lcb"],
+    ["lcb", "rcb"],
+    ["rcb", "rb"],
+
+    ["lcb", "cdm"],
+    ["rcb", "cdm"],
+
+    ["cdm", "lcm"],
+    ["cdm", "rcm"],
+
+    ["lcm", "cam"],
+    ["rcm", "cam"],
+
+    ["cam", "ls"],
+    ["cam", "rs"],
+
+    ["ls", "rs"],
+  ],
+
+  "3-5-2": [
+    ["lcb", "cb"],
+    ["cb", "rcb"],
+
+    ["lcb", "lm"],
+    ["rcb", "rm"],
+
+    ["cb", "ldm"],
+    ["cb", "rdm"],
+
+    ["ldm", "rdm"],
+
+    ["ldm", "cam"],
+    ["rdm", "cam"],
+
+    ["lm", "ls"],
+    ["rm", "rs"],
+
+    ["cam", "ls"],
+    ["cam", "rs"],
+
+    ["ls", "rs"],
+  ],
+
+  "3-1-4-2": [
+    ["lcb", "cb"],
+    ["cb", "rcb"],
+
+    ["cb", "cdm"],
+
+    ["lcb", "lm"],
+    ["rcb", "rm"],
+
+    ["lm", "lcm"],
+    ["lcm", "rcm"],
+    ["rcm", "rm"],
+
+    ["cdm", "lcm"],
+    ["cdm", "rcm"],
+
+    ["lcm", "ls"],
+    ["rcm", "rs"],
+
+    ["ls", "rs"],
+  ],
+};
+
+/* =========================================================
+   PLAYER CHIP
+   ========================================================= */
+
+function PlayerChip({ player, onDragStart, selected, readOnly }) {
   const name = getPlayerName(player);
 
   return (
@@ -55,8 +189,7 @@ function PlayerChip({ player, onDragStart, onClick, selected, readOnly }) {
       onDragStart={
         readOnly ? undefined : (event) => onDragStart(event, player.id)
       }
-      onClick={readOnly ? undefined : () => onClick?.(player.id)}
-      title={readOnly ? name : "Húzd a pályára vagy kattints a cserepadhoz"}
+      title={readOnly ? name : "Húzd a pályára"}
     >
       <span className="lineup-player-chip__avatar">
         {player.avatarUrl ? (
@@ -79,8 +212,120 @@ function PlayerChip({ player, onDragStart, onClick, selected, readOnly }) {
   );
 }
 
+/* =========================================================
+   CONNECTION LAYER
+   ========================================================= */
+
+function PitchConnections({ formationId, starters }) {
+  const formation = FORMATIONS[formationId];
+
+  if (!formation) {
+    return null;
+  }
+
+  const slotMap = new Map(
+    formation.slots.map(([slotId, _position, x, y]) => [slotId, { x, y }]),
+  );
+
+  const connections = FORMATION_CONNECTIONS[formationId] || [];
+
+  return (
+    <svg
+      className="lineup-pitch__connections"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="bodConnectionGradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#5fffc1" stopOpacity="0.35" />
+
+          <stop offset="50%" stopColor="#ffd21f" stopOpacity="0.95" />
+
+          <stop offset="100%" stopColor="#5fffc1" stopOpacity="0.35" />
+        </linearGradient>
+
+        <filter
+          id="bodConnectionGlow"
+          x="-50%"
+          y="-50%"
+          width="200%"
+          height="200%"
+        >
+          <feGaussianBlur stdDeviation="0.9" result="blur" />
+
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {connections.map(([fromId, toId]) => {
+        const from = slotMap.get(fromId);
+
+        const to = slotMap.get(toId);
+
+        if (!from || !to) {
+          return null;
+        }
+
+        const fromPlayer = starters[fromId];
+
+        const toPlayer = starters[toId];
+
+        if (!fromPlayer || !toPlayer) {
+          return null;
+        }
+
+        return (
+          <g key={`${fromId}-${toId}`} className="lineup-connection">
+            <line
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke="#ffd21f"
+              strokeWidth="1.5"
+              strokeOpacity="0.22"
+              filter="url(#bodConnectionGlow)"
+              vectorEffect="non-scaling-stroke"
+            />
+
+            <line
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke="url(#bodConnectionGradient)"
+              strokeWidth="0.45"
+              strokeOpacity="0.85"
+              strokeDasharray="1.2 0.7"
+              vectorEffect="non-scaling-stroke"
+            />
+
+            <circle
+              cx={(from.x + to.x) / 2}
+              cy={(from.y + to.y) / 2}
+              r="0.65"
+              fill="#ffd21f"
+              fillOpacity="0.9"
+              filter="url(#bodConnectionGlow)"
+            />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* =========================================================
+   PITCH SLOT
+   ========================================================= */
+
 function PitchSlot({ slot, player, onDrop, onDragStart, onRemove, readOnly }) {
   const [slotId, position, x, y] = slot;
+
   const name = getPlayerName(player);
 
   return (
@@ -91,6 +336,7 @@ function PitchSlot({ slot, player, onDrop, onDragStart, onRemove, readOnly }) {
       style={{
         left: `${x}%`,
         top: `${y}%`,
+        zIndex: 3,
       }}
       onDragOver={(event) => {
         if (!readOnly) {
@@ -143,30 +389,39 @@ function PitchSlot({ slot, player, onDrop, onDragStart, onRemove, readOnly }) {
   );
 }
 
+/* =========================================================
+   MAIN
+   ========================================================= */
+
 export default function LineupBuilder() {
   const { isAdmin } = useAuth();
 
   const [matches, setMatches] = useState([]);
+
   const [matchId, setMatchId] = useState("");
+
   const [formationId, setFormationId] = useState("4-3-3");
 
   const [players, setPlayers] = useState([]);
+
   const [allPlayers, setAllPlayers] = useState([]);
 
   const [poll, setPoll] = useState(null);
+
   const [matchingPolls, setMatchingPolls] = useState([]);
 
   const [starters, setStarters] = useState({});
-  const [substitutes, setSubstitutes] = useState([]);
 
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
 
   const [loading, setLoading] = useState(true);
+
   const [loadingCandidates, setLoadingCandidates] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
+
   const [message, setMessage] = useState("");
 
   const formations = useMemo(() => getFormationList(), []);
@@ -180,19 +435,9 @@ export default function LineupBuilder() {
     [starters],
   );
 
-  const substituteIds = useMemo(
-    () => new Set(substitutes.map(String)),
-    [substitutes],
-  );
-
   const availablePlayers = useMemo(
-    () =>
-      players.filter(
-        (player) =>
-          !starterIds.has(String(player.id)) &&
-          !substituteIds.has(String(player.id)),
-      ),
-    [players, starterIds, substituteIds],
+    () => players.filter((player) => !starterIds.has(String(player.id))),
+    [players, starterIds],
   );
 
   const selectedMatch = useMemo(
@@ -203,6 +448,10 @@ export default function LineupBuilder() {
   const starterCount = starterIds.size;
 
   const formationComplete = starterCount === 11;
+
+  /* =========================================================
+     LOAD MATCHES
+     ========================================================= */
 
   useEffect(() => {
     async function loadMatches() {
@@ -258,9 +507,15 @@ export default function LineupBuilder() {
     loadMatches();
   }, []);
 
+  /* =========================================================
+     LOAD PLAYERS / POLL / SAVED LINEUP
+     ========================================================= */
+
   useEffect(() => {
     async function loadCandidates() {
-      if (!selectedMatch) return;
+      if (!selectedMatch) {
+        return;
+      }
 
       const dateKey = getMatchDate(selectedMatch);
 
@@ -274,6 +529,7 @@ export default function LineupBuilder() {
 
       try {
         setLoadingCandidates(true);
+
         setError("");
         setMessage("");
 
@@ -294,12 +550,10 @@ export default function LineupBuilder() {
           setFormationId(saved.formationId || "4-3-3");
 
           setStarters(saved.starters || {});
-
-          setSubstitutes(saved.substitutes || []);
         } else {
           setFormationId("4-3-3");
+
           setStarters({});
-          setSubstitutes([]);
         }
       } catch (loadError) {
         console.error(loadError);
@@ -315,8 +569,14 @@ export default function LineupBuilder() {
     loadCandidates();
   }, [selectedMatch]);
 
+  /* =========================================================
+     PLAYER ASSIGNMENT
+     ========================================================= */
+
   function assignPlayer(slotId, playerId) {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      return;
+    }
 
     const normalizedId = String(playerId);
 
@@ -338,14 +598,12 @@ export default function LineupBuilder() {
 
       return next;
     });
-
-    setSubstitutes((current) =>
-      current.filter((id) => String(id) !== normalizedId),
-    );
   }
 
   function handleDragStart(event, playerId) {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      return;
+    }
 
     event.dataTransfer.effectAllowed = "move";
 
@@ -355,7 +613,9 @@ export default function LineupBuilder() {
   }
 
   function handleDrop(event, slotId) {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      return;
+    }
 
     event.preventDefault();
 
@@ -371,30 +631,10 @@ export default function LineupBuilder() {
     setDraggedPlayerId(null);
   }
 
-  function addSubstitute(playerId) {
-    if (!isAdmin) return;
-
-    const normalizedId = String(playerId);
-
-    if (starterIds.has(normalizedId)) {
+  function removeSlot(slotId) {
+    if (!isAdmin) {
       return;
     }
-
-    setSubstitutes((current) =>
-      current.includes(normalizedId) ? current : [...current, normalizedId],
-    );
-  }
-
-  function removeSubstitute(playerId) {
-    if (!isAdmin) return;
-
-    setSubstitutes((current) =>
-      current.filter((id) => String(id) !== String(playerId)),
-    );
-  }
-
-  function removeSlot(slotId) {
-    if (!isAdmin) return;
 
     setStarters((current) => {
       const next = {
@@ -417,8 +657,14 @@ export default function LineupBuilder() {
     setStarters({});
   }
 
+  /* =========================================================
+     SAVE
+     ========================================================= */
+
   async function handleSave() {
-    if (!isAdmin || !selectedMatch) return;
+    if (!isAdmin || !selectedMatch) {
+      return;
+    }
 
     const count = Object.values(starters).filter(Boolean).length;
 
@@ -430,6 +676,7 @@ export default function LineupBuilder() {
 
     try {
       setSaving(true);
+
       setError("");
       setMessage("");
 
@@ -437,7 +684,12 @@ export default function LineupBuilder() {
         match: selectedMatch,
         formationId,
         starters,
-        substitutes,
+
+        // A cserepadot az új UI már nem használja.
+        // Az adatstruktúra kompatibilitása miatt
+        // üres tömböt mentünk.
+        substitutes: [],
+
         pollId: poll?.id || null,
       });
 
@@ -451,6 +703,10 @@ export default function LineupBuilder() {
     }
   }
 
+  /* =========================================================
+     LOADING
+     ========================================================= */
+
   if (loading) {
     return (
       <div className="page-shell">
@@ -458,6 +714,10 @@ export default function LineupBuilder() {
       </div>
     );
   }
+
+  /* =========================================================
+     RENDER
+     ========================================================= */
 
   return (
     <div className="page-shell lineup-page">
@@ -467,7 +727,7 @@ export default function LineupBuilder() {
         description={
           isAdmin
             ? "A lezárt Discord jelenléti szavazás IGEN válaszai alapján állíthatod össze a kezdőt."
-            : "A csapat aktuális kezdő 11-ének és cserepadjának megtekintése."
+            : "A csapat aktuális kezdő 11-ének megtekintése."
         }
       />
 
@@ -476,6 +736,10 @@ export default function LineupBuilder() {
       {message && (
         <div className="lineup-alert lineup-alert--success">{message}</div>
       )}
+
+      {/* =====================================================
+          TOOLBAR
+          ===================================================== */}
 
       <section className="lineup-toolbar panel">
         <div className="lineup-toolbar__match">
@@ -535,6 +799,10 @@ export default function LineupBuilder() {
         </div>
       </section>
 
+      {/* =====================================================
+          MULTIPLE POLLS
+          ===================================================== */}
+
       {matchingPolls.length > 1 && (
         <section className="lineup-poll-list panel">
           <strong>Több lezárt poll van erre a napra</strong>
@@ -542,19 +810,29 @@ export default function LineupBuilder() {
           <span>A legutóbbi lezárt poll kerül automatikusan használatra.</span>
 
           <div>
-            {matchingPolls.map(({ poll: item, availablePlayers }) => (
-              <span
-                key={item.id}
-                className={item.id === poll?.id ? "active" : ""}
-              >
-                {item.question} · {availablePlayers.length} IGEN
-              </span>
-            ))}
+            {matchingPolls.map(
+              ({ poll: item, availablePlayers: pollPlayers }) => (
+                <span
+                  key={item.id}
+                  className={item.id === poll?.id ? "active" : ""}
+                >
+                  {item.question} · {pollPlayers.length} IGEN
+                </span>
+              ),
+            )}
           </div>
         </section>
       )}
 
+      {/* =====================================================
+          WORKSPACE
+          ===================================================== */}
+
       <section className="lineup-workspace">
+        {/* ===================================================
+            LEFT — AVAILABLE PLAYERS
+            =================================================== */}
+
         <aside className="lineup-roster panel">
           <div className="lineup-panel-heading">
             <div>
@@ -580,17 +858,17 @@ export default function LineupBuilder() {
               <PlayerChip
                 key={player.id}
                 player={player}
-                selected={
-                  starterIds.has(String(player.id)) ||
-                  substituteIds.has(String(player.id))
-                }
+                selected={starterIds.has(String(player.id))}
                 readOnly={!isAdmin}
                 onDragStart={handleDragStart}
-                onClick={addSubstitute}
               />
             ))}
           </div>
         </aside>
+
+        {/* ===================================================
+            CENTER — MATCHDAY XI
+            =================================================== */}
 
         <main className="lineup-pitch-panel">
           <div className="lineup-match-heading">
@@ -602,20 +880,20 @@ export default function LineupBuilder() {
               <p>{selectedMatch ? `vs ${selectedMatch.opponentName}` : "-"}</p>
             </div>
 
-            <div className="lineup-match-heading__status">
-              <span className={formationComplete ? "complete" : ""}>
-                {starterCount}
-              </span>
+            <div className="lineup-match-heading__right">
+              <div className="lineup-match-heading__status">
+                <span className={formationComplete ? "complete" : ""}>
+                  {starterCount}
+                </span>
 
-              <small>/ 11</small>
+                <small>/ 11</small>
+              </div>
 
-              <strong>{formationId}</strong>
+              <span className="lineup-formation-badge">{formationId}</span>
             </div>
           </div>
 
           <div className="lineup-pitch">
-            <div className="pitch-overlay" />
-
             <div className="pitch-glow pitch-glow--gold" />
 
             <div className="pitch-glow pitch-glow--green" />
@@ -631,6 +909,8 @@ export default function LineupBuilder() {
             <div className="pitch-goal pitch-goal--top" />
 
             <div className="pitch-goal pitch-goal--bottom" />
+
+            <PitchConnections formationId={formationId} starters={starters} />
 
             {formation?.slots.map((slot) => {
               const player = playerMap.get(String(starters[slot[0]]));
@@ -648,58 +928,8 @@ export default function LineupBuilder() {
               );
             })}
           </div>
-        </main>
 
-        <aside className="lineup-bench panel">
-          <div className="lineup-panel-heading">
-            <div>
-              <span className="eyebrow">BENCH</span>
-
-              <h2>Cserepad</h2>
-            </div>
-
-            <strong>{substitutes.length}</strong>
-          </div>
-
-          <div className="lineup-bench-list">
-            {substitutes.length === 0 && (
-              <p className="muted">
-                {isAdmin
-                  ? "Kattints egy játékosra a cserepadhoz."
-                  : "Nincs mentett cserepad."}
-              </p>
-            )}
-
-            {substitutes.map((playerId, index) => {
-              const player = playerMap.get(String(playerId));
-
-              if (!player) return null;
-
-              return (
-                <button
-                  type="button"
-                  className="lineup-bench-player"
-                  key={player.id}
-                  disabled={!isAdmin}
-                  onClick={() => removeSubstitute(player.id)}
-                >
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-
-                  <div className="lineup-bench-player__avatar">
-                    {player.avatarUrl ? (
-                      <img src={player.avatarUrl} alt="" />
-                    ) : (
-                      getPlayerInitials(player)
-                    )}
-                  </div>
-
-                  <strong>{getPlayerName(player)}</strong>
-
-                  <small>{isAdmin ? "kivétel" : "csere"}</small>
-                </button>
-              );
-            })}
-          </div>
+          {/* SAVE / VIEWER AREA */}
 
           {isAdmin ? (
             <button
@@ -715,7 +945,7 @@ export default function LineupBuilder() {
               A kezdő 11-et csak az Admin szerkesztheti.
             </div>
           )}
-        </aside>
+        </main>
       </section>
     </div>
   );

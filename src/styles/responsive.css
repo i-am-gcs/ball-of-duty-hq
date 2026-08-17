@@ -1,3 +1,7 @@
+/* =========================================================
+   GLOBAL RESPONSIVE
+   ========================================================= */
+
 @media (max-width: 800px) {
   .app-content {
     margin-left: 0;
@@ -54,41 +58,34 @@
   }
 }
 
+/* =========================================================
+   SMALL SCREENS / GLOBAL
+   ========================================================= */
+
 @media (max-width: 560px) {
   .page-header h2 {
     font-size: 28px;
   }
 
-  @media (max-width: 560px) {
-    .page-header h2 {
-      font-size: 28px;
-    }
+  .profile-copy {
+    display: none;
+  }
 
-    .profile-copy {
-      display: none;
-    }
+  .profile-trigger {
+    padding-right: 6px;
+  }
 
-    .profile-trigger {
-      padding-right: 6px;
-    }
+  .profile-chevron {
+    display: none;
+  }
 
-    .profile-chevron {
-      display: none;
-    }
+  .profile-dropdown {
+    position: fixed;
+    top: 74px;
+    right: 12px;
+    left: 12px;
 
-    .profile-dropdown {
-      position: fixed;
-      top: 74px;
-      right: 12px;
-      left: 12px;
-
-      width: auto;
-    }
-
-    .form-actions {
-      align-items: flex-start;
-      flex-direction: column;
-    }
+    width: auto;
   }
 
   .form-actions {
@@ -96,6 +93,11 @@
     flex-direction: column;
   }
 }
+
+/* =========================================================
+   SEASON DETAILS
+   ========================================================= */
+
 @media (max-width: 900px) {
   .season-details__competition-grid,
   .season-details__awards {
@@ -130,6 +132,11 @@
     text-align: left;
   }
 }
+
+/* =========================================================
+   SEASON STATISTICS
+   ========================================================= */
+
 @media (max-width: 1000px) {
   .season-statistics__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -149,6 +156,11 @@
     display: none;
   }
 }
+
+/* =========================================================
+   MATCHES
+   ========================================================= */
+
 @media (max-width: 760px) {
   .match-toolbar {
     align-items: stretch;
@@ -176,7 +188,6 @@
 
   .match-card__score {
     justify-content: center;
-
     order: -1;
   }
 }
@@ -196,6 +207,11 @@
     font-size: 29px;
   }
 }
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
 @media (max-width: 1150px) {
   .dashboard-summary-grid,
   .stat-grid {
@@ -242,6 +258,11 @@
     flex-direction: column;
   }
 }
+
+/* =========================================================
+   MATCH DETAILS
+   ========================================================= */
+
 @media (max-width: 900px) {
   .match-details__grid {
     grid-template-columns: 1fr;
@@ -249,6 +270,50 @@
 
   .match-details__meta {
     grid-template-columns: 1fr;
+  }
+
+  .match-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .match-details-scoreboard {
+    grid-template-columns: 1fr;
+    gap: 24px;
+
+    text-align: center;
+  }
+
+  .match-details-team--away,
+  .match-details-team {
+    text-align: center;
+  }
+
+  .match-details-score {
+    order: -1;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .match-badge {
+    width: 84px;
+    height: 84px;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .result-row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
   }
 }
 
@@ -284,56 +349,7 @@
   .match-details__score {
     font-size: 34px;
   }
-}
 
-@media (max-width: 760px) {
-  .hero-panel {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .match-badge {
-    width: 84px;
-    height: 84px;
-  }
-
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .result-row {
-    grid-template-columns: 1fr;
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 800px) {
-  .match-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .match-details-scoreboard {
-    grid-template-columns: 1fr;
-    gap: 24px;
-
-    text-align: center;
-  }
-
-  .match-details-team--away {
-    text-align: center;
-  }
-
-  .match-details-team {
-    text-align: center;
-  }
-
-  .match-details-score {
-    order: -1;
-    margin: 0 auto;
-  }
-}
-
-@media (max-width: 520px) {
   .match-details-hero {
     padding: 20px;
   }
@@ -352,5 +368,87 @@
 
   .match-info-row strong {
     text-align: left;
+  }
+}
+
+/* =========================================================
+   MATCHDAY XI
+   ========================================================= */
+
+/*
+   Desktopen nem módosítjuk a Matchday XI megjelenését.
+   Csak kisebb kijelzőknél engedjük összehúzódni
+   a fejlécet, választót és a pályát.
+*/
+
+@media (max-width: 1000px) {
+  .matchday-page {
+    width: 100%;
+  }
+
+  .matchday-page__toolbar {
+    gap: 20px;
+  }
+
+  .matchday-page__selector {
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 760px) {
+  .matchday-page {
+    padding: 0;
+  }
+
+  .matchday-page__toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .matchday-page__selector {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .matchday-page__selector select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .matchday-page__toolbar h1 {
+    font-size: 32px;
+  }
+
+  .matchday-page__toolbar p {
+    font-size: 14px;
+  }
+
+  .matchday-page__alert,
+  .matchday-page__empty,
+  .matchday-page__loading {
+    padding: 16px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 420px) {
+  .page-content {
+    padding: 14px;
+  }
+
+  .topbar {
+    padding: 12px 14px;
+  }
+
+  .page-header h2 {
+    font-size: 24px;
+  }
+
+  .matchday-page__toolbar h1 {
+    font-size: 28px;
   }
 }

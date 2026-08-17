@@ -803,7 +803,6 @@
 @media (max-width: 900px) {
   .absence-calendar__day {
     min-height: 130px;
-
     padding: 8px;
   }
 
@@ -814,7 +813,6 @@
   .calendar-vpg-match__logo {
     width: 20px;
     height: 20px;
-
     flex-basis: 20px;
   }
 
@@ -823,14 +821,14 @@
   }
 
   .vpg-fixture {
-    grid-template-columns:
-      65px
-      minmax(0, 1fr)
-      auto;
-
+    grid-template-columns: 65px minmax(0, 1fr) auto;
     gap: 12px;
   }
 }
+
+/* ==================================================
+   TABLET / SMALL SCREEN
+   ================================================== */
 
 @media (max-width: 700px) {
   .absence-calendar {
@@ -839,10 +837,21 @@
 
   .absence-calendar__toolbar {
     gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .absence-calendar__month {
+    gap: 8px;
   }
 
   .absence-calendar__month h2 {
-    font-size: 19px;
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  .absence-calendar__today {
+    padding: 5px 8px;
+    font-size: 10px;
   }
 
   .absence-calendar__grid {
@@ -850,68 +859,90 @@
   }
 
   .absence-calendar__day {
-    min-height: 100px;
-
-    padding: 6px;
-
+    min-height: 105px;
+    padding: 5px;
     border-radius: 8px;
   }
 
   .absence-calendar__date {
-    min-width: 24px;
-    height: 24px;
-
-    font-size: 12px;
+    min-width: 22px;
+    height: 22px;
+    font-size: 11px;
   }
 
-  .calendar-vpg-matches {
-    gap: 5px;
+  /* -----------------------------------------------
+     MATCH CARD
+     ----------------------------------------------- */
 
-    margin-top: 5px;
+  .calendar-vpg-matches {
+    gap: 4px;
+    margin-top: 4px;
   }
 
   .calendar-vpg-match {
-    padding: 6px;
-
-    border-radius: 7px;
+    padding: 5px;
+    border-radius: 6px;
   }
 
+  /*
+   * Mobilon nincs szükség a verseny nevére.
+   * A meccs helye nagyon kevés.
+   */
   .calendar-vpg-match__header {
-    margin-bottom: 4px;
+    display: none;
   }
 
-  .calendar-vpg-match__icon {
-    font-size: 10px;
-  }
-
-  .calendar-vpg-match__competition {
-    font-size: 8px;
-  }
-
-  .calendar-vpg-match__logo {
-    width: 18px;
-    height: 18px;
-
-    flex-basis: 18px;
+  .calendar-vpg-match__teams {
+    gap: 2px;
   }
 
   .calendar-vpg-match__team {
-    gap: 5px;
+    display: block;
+    min-width: 0;
   }
 
   .calendar-vpg-match__team strong {
-    font-size: 9px;
+    display: block;
+
+    max-width: 100%;
+
+    overflow: hidden;
+
+    color: #edf7f4;
+
+    font-size: 8px;
+    line-height: 1.2;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /*
+   * Logók mobilon eltűnnek.
+   */
+  .calendar-vpg-match__logo {
+    display: none;
   }
 
   .calendar-vpg-match__vs {
-    font-size: 8px !important;
+    margin: 1px 0;
+
+    font-size: 7px !important;
+    line-height: 1;
   }
 
   .calendar-vpg-match__time {
     margin-top: 4px;
 
-    font-size: 10px;
+    color: #f2bb1f;
+
+    font-size: 8px;
+    line-height: 1;
   }
+
+  /* -----------------------------------------------
+     VPG LIST
+     ----------------------------------------------- */
 
   .vpg-fixture-list,
   .absence-list {
@@ -922,18 +953,21 @@
   .absence-list__header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 10px;
   }
 
   .vpg-fixture {
     grid-template-columns: 1fr;
-
     gap: 10px;
+  }
+
+  .vpg-fixture__teams {
+    flex-wrap: wrap;
   }
 
   .vpg-fixture__meta {
     align-items: flex-start;
     flex-direction: row;
-
     justify-content: space-between;
   }
 
@@ -944,40 +978,170 @@
 
   .absence-item__actions {
     width: 100%;
-
     margin-left: 56px;
   }
 }
 
+/* ==================================================
+   PHONE
+   ================================================== */
+
 @media (max-width: 500px) {
-  .absence-calendar__weekdays div {
-    padding: 5px 2px;
+  .absence-calendar {
+    padding: 8px;
+  }
+
+  /* -----------------------------------------------
+     MONTH HEADER
+     ----------------------------------------------- */
+
+  .absence-calendar__toolbar {
+    margin-bottom: 12px;
+  }
+
+  .absence-calendar__month {
+    gap: 5px;
+  }
+
+  .absence-calendar__month h2 {
+    font-size: 16px;
+  }
+
+  .absence-calendar__today {
+    padding: 4px 7px;
+
+    border-radius: 7px;
 
     font-size: 9px;
   }
 
-  .absence-calendar__day {
-    min-height: 82px;
+  /* -----------------------------------------------
+     WEEKDAYS
+     ----------------------------------------------- */
+
+  .absence-calendar__weekdays {
+    margin-bottom: 3px;
   }
+
+  .absence-calendar__weekdays div {
+    padding: 4px 1px;
+
+    font-size: 8px;
+  }
+
+  /* -----------------------------------------------
+     DAYS
+     ----------------------------------------------- */
+
+  .absence-calendar__grid {
+    gap: 2px;
+  }
+
+  .absence-calendar__day {
+    min-height: 92px;
+
+    padding: 4px;
+
+    border-radius: 6px;
+  }
+
+  .absence-calendar__date {
+    min-width: 20px;
+    height: 20px;
+
+    font-size: 10px;
+  }
+
+  /* -----------------------------------------------
+     ABSENCE
+     ----------------------------------------------- */
 
   .absence-calendar__marker {
     display: none;
   }
 
-  .calendar-vpg-match__header {
-    display: none;
+  /* -----------------------------------------------
+     MATCH
+     ----------------------------------------------- */
+
+  .calendar-vpg-matches {
+    gap: 3px;
+    margin-top: 3px;
   }
 
-  .calendar-vpg-match__logo {
-    display: none;
+  .calendar-vpg-match {
+    padding: 4px;
+
+    border-radius: 5px;
+  }
+
+  .calendar-vpg-match__teams {
+    gap: 1px;
   }
 
   .calendar-vpg-match__team strong {
-    font-size: 8px;
+    font-size: 7px;
+    line-height: 1.15;
+  }
+
+  .calendar-vpg-match__vs {
+    margin: 1px 0;
+
+    font-size: 6px !important;
   }
 
   .calendar-vpg-match__time {
-    font-size: 9px;
+    margin-top: 3px;
+
+    font-size: 7px;
+  }
+
+  /* -----------------------------------------------
+     FIXTURE LIST
+     ----------------------------------------------- */
+
+  .vpg-fixture-list,
+  .absence-list {
+    padding: 14px;
+  }
+
+  .vpg-fixture-list__header h2,
+  .absence-list__header h2 {
+    font-size: 20px;
+  }
+
+  .vpg-fixture {
+    padding: 12px;
+  }
+
+  .vpg-fixture__teams {
+    display: grid;
+
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 8px;
+  }
+
+  .vpg-fixture__teams strong {
+    font-size: 12px;
+  }
+
+  .vpg-fixture__teams strong:last-child {
+    text-align: right;
+  }
+
+  .vpg-fixture__meta {
+    align-items: center;
+  }
+
+  /* -----------------------------------------------
+     ABSENCE ITEMS
+     ----------------------------------------------- */
+
+  .absence-item {
+    padding: 12px;
   }
 
   .absence-item__actions {
@@ -987,12 +1151,4 @@
   .absence-item__actions .button {
     flex: 1;
   }
-}
-.calendar-vpg-match__competition-logo {
-  width: 28px;
-  height: 28px;
-
-  flex: 0 0 28px;
-
-  object-fit: contain;
 }

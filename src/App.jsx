@@ -18,6 +18,7 @@ import Calendar from "./pages/Calendar";
 import Seasons from "./pages/Seasons";
 import SeasonDetails from "./pages/SeasonDetails";
 import LineupBuilder from "./pages/LineupBuilder";
+import MatchdayXIPage from "./pages/MatchdayXIPage";
 
 function App() {
   return (
@@ -38,6 +39,8 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
 
             <Route path="/seasons" element={<Seasons />} />
+
+            <Route path="/matchday-xi" element={<MatchdayXIPage />} />
 
             <Route path="/voting" element={<Voting />} />
 
