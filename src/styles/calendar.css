@@ -1153,9 +1153,12 @@
   }
 }
 .calendar-vpg-match__competition-logo {
-  width: 70px;
-  height: 70px;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+
+  flex: 0 0 28px !important;
+
   object-fit: contain;
-  display: block;
-  margin: 0 auto;
 }
