@@ -1152,3 +1152,10 @@
     flex: 1;
   }
 }
+.calendar-vpg-match__competition-logo {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
