@@ -5,6 +5,7 @@ import StatCard from "../components/ui/StatCard";
 import { getPlayers } from "../services/playerService";
 import { getActiveSeason } from "../services/seasonService";
 import { getUpcomingVpgMatchesNormalized } from "../services/vpgService";
+import { getBodLeagueStats } from "../services/vpgLeagueService";
 
 function formatVpgDate(datetime) {
   if (!datetime) {
@@ -84,17 +85,33 @@ function getSeasonDisplayName(season) {
   return season.name.replace(/^Ball of Duty\s*/i, "");
 }
 
-function getSeasonLeague(season) {
+/**
+ * Az aktív szezon első VPG league competitionje.
+ *
+ * A VPG kapcsolat az új struktúrában:
+ *
+ * competition.vpg.seasonId
+ * competition.vpg.leagueSlug
+ */
+function getActiveVpgLeague(season) {
   return (
-    (season?.competitions || []).find(
-      (competition) => competition.type === "league",
+    season?.competitions?.find(
+      (competition) =>
+        competition.type === "league" && competition.vpg?.seasonId,
     ) || null
   );
 }
 
-function getSeasonPlacement(season) {
+/**
+ * Dashboard helyezés.
+ *
+ * A lezárt szezonoknál használható a mentett placement,
+ * aktív szezonnál viszont mindig az aktuális VPG tabellát
+ * kérjük le.
+ */
+function getSavedSeasonPlacement(season) {
   return (
-    (season?.competitions || []).find(
+    season?.competitions?.find(
       (competition) =>
         competition.type === "league" && competition.placement != null,
     )?.placement ?? null
@@ -104,8 +121,13 @@ function getSeasonPlacement(season) {
 function Dashboard() {
   const [activePlayers, setActivePlayers] = useState([]);
   const [activeSeason, setActiveSeason] = useState(null);
+
   const [clubDataLoading, setClubDataLoading] = useState(true);
   const [clubDataError, setClubDataError] = useState("");
+
+  const [currentPlacement, setCurrentPlacement] = useState(null);
+  const [placementLoading, setPlacementLoading] = useState(true);
+  const [placementError, setPlacementError] = useState("");
 
   const [nextMatch, setNextMatch] = useState(null);
 
@@ -114,6 +136,12 @@ function Dashboard() {
   const [vpgError, setVpgError] = useState("");
 
   const [countdown, setCountdown] = useState(null);
+
+  /*
+   * =========================================
+   * KLUBADATOK
+   * =========================================
+   */
 
   useEffect(() => {
     async function loadClubData() {
@@ -137,6 +165,7 @@ function Dashboard() {
         setActiveSeason(season);
       } catch (error) {
         console.error("Dashboard klubadat betöltési hiba:", error);
+
         setClubDataError("Nem sikerült betölteni a klub aktuális adatait.");
       } finally {
         setClubDataLoading(false);
@@ -145,6 +174,105 @@ function Dashboard() {
 
     loadClubData();
   }, []);
+
+  /*
+   * =========================================
+   * AKTUÁLIS VPG HELYEZÉS
+   * =========================================
+   *
+   * Aktív szezon:
+   * - VPG API-ból kérjük le
+   * - nem a Firebase-ben tárolt placementet használjuk
+   *
+   * Lezárt szezon:
+   * - a mentett placement használható
+   *
+   * Így az aktív szezon helyezése automatikusan
+   * követi a VPG aktuális tabelláját.
+   */
+
+  useEffect(() => {
+    if (!activeSeason) {
+      setCurrentPlacement(null);
+      setPlacementLoading(false);
+      setPlacementError("");
+      return;
+    }
+
+    async function loadCurrentPlacement() {
+      try {
+        setPlacementLoading(true);
+        setPlacementError("");
+        setCurrentPlacement(null);
+
+        /*
+         * Lezárt szezon esetén nem kell élő VPG lekérés.
+         * Ott a szezon végleges helyezése a Firebase-ben
+         * már el van mentve.
+         */
+        if (activeSeason.status === "completed") {
+          setCurrentPlacement(getSavedSeasonPlacement(activeSeason));
+
+          return;
+        }
+
+        const competition = getActiveVpgLeague(activeSeason);
+
+        if (!competition) {
+          setCurrentPlacement(null);
+          return;
+        }
+
+        /*
+         * Ugyanazt a struktúrát használjuk,
+         * mint a SeasonDetails.
+         */
+        const vpgCompetition = {
+          ...competition,
+
+          vpgLeagueSlug: competition.vpg?.leagueSlug || "",
+          vpgSeasonId: competition.vpg?.seasonId || null,
+
+          vpgIsHistory: false,
+        };
+
+        const standings = await getBodLeagueStats(vpgCompetition);
+
+        /*
+         * A standings service már isBod mezővel jelöli
+         * a Ball of Duty sort.
+         *
+         * Biztonsági fallbackként a csapatnevet is ellenőrizzük.
+         */
+        const bodStanding =
+          standings.find((team) => team.isBod) ||
+          standings.find(
+            (team) =>
+              String(team.teamName || "")
+                .trim()
+                .toLowerCase() === "ball of duty cf",
+          );
+
+        setCurrentPlacement(bodStanding?.position ?? null);
+      } catch (error) {
+        console.error("Dashboard VPG helyezés betöltési hiba:", error);
+
+        setPlacementError("Nem sikerült betölteni az aktuális helyezést.");
+
+        setCurrentPlacement(null);
+      } finally {
+        setPlacementLoading(false);
+      }
+    }
+
+    loadCurrentPlacement();
+  }, [activeSeason]);
+
+  /*
+   * =========================================
+   * KÖVETKEZŐ MÉRKŐZÉS
+   * =========================================
+   */
 
   useEffect(() => {
     async function loadNextMatch() {
@@ -167,6 +295,12 @@ function Dashboard() {
     loadNextMatch();
   }, []);
 
+  /*
+   * =========================================
+   * COUNTDOWN
+   * =========================================
+   */
+
   useEffect(() => {
     if (!nextMatch?.datetime) {
       setCountdown(null);
@@ -183,6 +317,12 @@ function Dashboard() {
 
     return () => clearInterval(interval);
   }, [nextMatch]);
+
+  /*
+   * =========================================
+   * RENDER
+   * =========================================
+   */
 
   return (
     <div className="page-stack">
@@ -210,12 +350,16 @@ function Dashboard() {
       {clubDataError && <p className="error-message">{clubDataError}</p>}
 
       <section className="stat-grid">
+        {/* KERETLÉTSZÁM */}
+
         <StatCard
           label="Keretlétszám"
           value={clubDataLoading ? "…" : activePlayers.length}
           detail={clubDataLoading ? "Betöltés..." : "Aktív játékos"}
           icon="♟"
         />
+
+        {/* AKTÍV SZEZON */}
 
         <StatCard
           label="Aktív szezon"
@@ -241,6 +385,8 @@ function Dashboard() {
           icon="◫"
         />
 
+        {/* KÖVETKEZŐ MÉRKŐZÉS */}
+
         <StatCard
           label="Következő mérkőzés"
           value={nextMatch ? formatVpgDate(nextMatch.datetime) : "—"}
@@ -256,16 +402,24 @@ function Dashboard() {
           icon="⚽"
         />
 
+        {/* AKTUÁLIS HELYEZÉS */}
+
         <StatCard
           label="Aktuális helyezés"
           value={
-            getSeasonPlacement(activeSeason) != null
-              ? `${getSeasonPlacement(activeSeason)}.`
-              : "—"
+            placementLoading
+              ? "…"
+              : currentPlacement != null
+                ? `${currentPlacement}.`
+                : "—"
           }
           detail={
-            getSeasonLeague(activeSeason)?.name ||
-            (clubDataLoading ? "Betöltés..." : "Nincs helyezés")
+            getActiveVpgLeague(activeSeason)?.name ||
+            (placementError
+              ? placementError
+              : clubDataLoading || placementLoading
+                ? "Betöltés..."
+                : "Nincs helyezés")
           }
           icon="★"
         />
