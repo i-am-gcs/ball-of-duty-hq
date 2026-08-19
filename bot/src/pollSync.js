@@ -459,16 +459,26 @@ export async function syncPollMessage(message, category) {
 }
 
 /**
- * Egy Discord csatorna legutóbbi polljainak szinkronizálása.
+ * Egy Discord csatorna aktív polljainak induláskori szinkronizálása.
+ *
+ * A lezárt pollokat nem dolgozzuk fel újra: azok eredménye már Firebase-ben
+ * marad. Ezzel elkerüljük a régi szavazók és válaszok ismételt lekérését.
  */
 export async function syncRecentChannelPolls(channel, category) {
   const messages = await channel.messages.fetch({
     limit: 100,
   });
 
+  const now = Date.now();
   const pollMessages = messages.filter((message) => message.poll);
+  const activePollMessages = pollMessages.filter((message) => {
+    const { poll } = message;
+    const expiresAt = poll.expiresAt?.getTime() ?? Number.POSITIVE_INFINITY;
 
-  for (const message of pollMessages.values()) {
+    return !poll.resultsFinalized && expiresAt > now;
+  });
+
+  for (const message of activePollMessages.values()) {
     try {
       await syncPollMessage(message, category);
     } catch (error) {
@@ -479,5 +489,8 @@ export async function syncRecentChannelPolls(channel, category) {
     }
   }
 
-  console.log(`${channel.name}: ${pollMessages.size} poll feldolgozva.`);
+  console.log(
+    `${channel.name}: ${activePollMessages.size} aktív poll feldolgozva, ` +
+      `${pollMessages.size - activePollMessages.size} lezárt poll kihagyva.`,
+  );
 }
