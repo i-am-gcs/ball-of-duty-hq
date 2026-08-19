@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import { config } from "./config.js";
 import { syncPollMessage, syncRecentChannelPolls } from "./pollSync.js";
+import { startTwitchStatusSync } from "./twitchStatus.js";
 
 const client = new Client({
   intents: [
@@ -32,6 +33,7 @@ async function resyncPollAnswer(pollAnswer) {
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Discord bot elindult: ${readyClient.user.tag}`);
+  startTwitchStatusSync();
 
   for (const [channelId, category] of config.pollChannels) {
     try {

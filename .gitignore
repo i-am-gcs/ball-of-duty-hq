@@ -3,6 +3,7 @@ node_modules
 .env.*
 dist
 vite*.log
+firebase-debug.log
 
 !bot/.env.example
 bot/serviceAccountKey.json

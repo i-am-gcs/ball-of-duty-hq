@@ -15,21 +15,18 @@ const titles = {
   "/statistics": "Statisztikák",
   "/matches": "Mérkőzések",
   "/users": "Felhasználók",
+  "/settings": "Beállítások",
+  "/stream-overlay": "Élő közvetítés",
 };
 
 function Header({ onMenuClick }) {
   const { user, isAdmin, logout } = useAuth();
-
   const location = useLocation();
-
   const [menuOpen, setMenuOpen] = useState(false);
-
   const profileMenuRef = useRef(null);
 
   const title = titles[location.pathname] ?? "Ball of Duty HQ";
-
   const displayName = user?.displayName || user?.email || "Csapattag";
-
   const initials = displayName
     .split(/\s+/)
     .map((part) => part[0])
@@ -39,10 +36,7 @@ function Header({ onMenuClick }) {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target)
-      ) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
     }
@@ -55,13 +49,11 @@ function Header({ onMenuClick }) {
 
     if (menuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-
       document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-
       document.removeEventListener("keydown", handleEscape);
     };
   }, [menuOpen]);
@@ -84,16 +76,13 @@ function Header({ onMenuClick }) {
 
       <div>
         <p className="eyebrow">Ball of Duty HQ</p>
-
         <h1>{title}</h1>
       </div>
 
       <div className="profile-menu" ref={profileMenuRef}>
         <button
           type="button"
-          className={`profile-trigger ${
-            menuOpen ? "profile-trigger--open" : ""
-          }`}
+          className={`profile-trigger ${menuOpen ? "profile-trigger--open" : ""}`}
           onClick={() => setMenuOpen((current) => !current)}
           aria-expanded={menuOpen}
           aria-haspopup="menu"
@@ -102,15 +91,10 @@ function Header({ onMenuClick }) {
 
           <div className="profile-copy">
             <strong>{displayName}</strong>
-
             <span>{isAdmin ? "Admin" : "Játékos"}</span>
           </div>
 
-          <span
-            className={`profile-chevron ${
-              menuOpen ? "profile-chevron--open" : ""
-            }`}
-          >
+          <span className={`profile-chevron ${menuOpen ? "profile-chevron--open" : ""}`}>
             ▾
           </span>
         </button>
@@ -122,7 +106,6 @@ function Header({ onMenuClick }) {
 
               <div>
                 <strong>{displayName}</strong>
-
                 <span>{isAdmin ? "Adminisztrátor" : "Játékos"}</span>
               </div>
             </div>
@@ -136,10 +119,8 @@ function Header({ onMenuClick }) {
               onClick={() => setMenuOpen(false)}
             >
               <span>👤</span>
-
               <div>
                 <strong>Saját profil</strong>
-
                 <small>Profiladatok és profilkép</small>
               </div>
             </Link>
@@ -153,10 +134,8 @@ function Header({ onMenuClick }) {
               onClick={handleLogout}
             >
               <span>🚪</span>
-
               <div>
                 <strong>Kilépés</strong>
-
                 <small>Kijelentkezés a HQ-ból</small>
               </div>
             </button>

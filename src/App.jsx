@@ -19,81 +19,41 @@ import Seasons from "./pages/Seasons";
 import SeasonDetails from "./pages/SeasonDetails";
 import LineupBuilder from "./pages/LineupBuilder";
 import MatchdayXIPage from "./pages/MatchdayXIPage";
+import Settings from "./pages/Settings";
+import StreamOverlay from "./pages/StreamOverlay";
 
 function App() {
   return (
     <Routes>
-      {/* =====================================================
-          PUBLIC
-      ===================================================== */}
-
       <Route path="/login" element={<Login />} />
-
-      {/* =====================================================
-          AUTHENTICATED + APPROVED
-      ===================================================== */}
 
       <Route element={<ProtectedRoute />}>
         <Route element={<ApprovalRoute />}>
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
 
-            {/* =================================================
-                GENERAL
-            ================================================= */}
-
             <Route path="/dashboard" element={<Dashboard />} />
-
             <Route path="/squad" element={<Squad />} />
-
             <Route path="/profile" element={<MyProfile />} />
-
             <Route path="/calendar" element={<Calendar />} />
-
             <Route path="/seasons" element={<Seasons />} />
-
             <Route path="/voting" element={<Voting />} />
-
             <Route path="/benefits" element={<BenefitTracker />} />
-
             <Route path="/statistics" element={<Statistics />} />
-
             <Route path="/matches" element={<Matches />} />
-
             <Route path="/matches/:matchId" element={<MatchDetails />} />
-
             <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
-
-            {/* =================================================
-                MATCHDAY XI
-
-                Minden jóváhagyott felhasználó számára
-                elérhető.
-
-                Admin közvetlen linkből is meg tudja nyitni,
-                de nincs külön menüpontja hozzá.
-            ================================================= */}
-
             <Route path="/matchday-xi" element={<MatchdayXIPage />} />
-
-            {/* =================================================
-                ADMIN ONLY
-            ================================================= */}
+            <Route path="/stream-overlay" element={<StreamOverlay />} />
 
             <Route element={<AdminRoute />}>
-              {/* Kezdő 11 Builder */}
               <Route path="/lineup" element={<LineupBuilder />} />
-
-              {/* Felhasználók kezelése */}
               <Route path="/users" element={<Users />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
         </Route>
       </Route>
-
-      {/* =====================================================
-          FALLBACK
-      ===================================================== */}
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

@@ -10,6 +10,10 @@ function getRequiredEnvironmentVariable(name) {
   return value;
 }
 
+function getOptionalEnvironmentVariable(name) {
+  return process.env[name]?.trim() || "";
+}
+
 function parsePollChannels(value) {
   return new Map(
     value.split(",").map((channelSetting) => {
@@ -34,4 +38,7 @@ export const config = {
   firebaseServiceAccountBase64: getRequiredEnvironmentVariable(
     "FIREBASE_SERVICE_ACCOUNT_BASE64",
   ),
+  twitchClientId: getOptionalEnvironmentVariable("TWITCH_CLIENT_ID"),
+  twitchClientSecret: getOptionalEnvironmentVariable("TWITCH_CLIENT_SECRET"),
+  twitchChannel: getOptionalEnvironmentVariable("TWITCH_CHANNEL") || "ballofdutycf",
 };

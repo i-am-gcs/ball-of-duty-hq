@@ -85,10 +85,14 @@ export async function getVpgLeagueStandings(
  * Egy VPG tabellabejegyzés normalizálása.
  */
 export function normalizeVpgStanding(team, index) {
+  const teamName = team.team_name || team.name || "-";
+
   return {
     position: index + 1,
 
-    teamName: team.team_name || team.name || "-",
+    teamName,
+
+    isBod: /ball of duty|\bbod\b/i.test(teamName),
 
     abbreviation: team.team_abbr || team.abbr || "",
 

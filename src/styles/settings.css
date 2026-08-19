@@ -1,0 +1,92 @@
+.settings-form {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.settings-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.settings-form span {
+  color: var(--bod-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-form select {
+  width: 100%;
+  padding: 12px 14px;
+
+  border: 1px solid var(--bod-border-strong);
+  border-radius: 10px;
+
+  color: var(--bod-text);
+  background: #0a130c;
+}
+
+.settings-form select:focus {
+  outline: none;
+  border-color: var(--bod-gold);
+  box-shadow: 0 0 0 3px rgba(245, 189, 22, 0.08);
+}
+
+.settings-form .form-actions {
+  flex-wrap: wrap;
+}
+
+.settings-visibility {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.settings-visibility legend {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+  color: var(--bod-text);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.settings-form .settings-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--bod-border-strong);
+  border-radius: 12px;
+  background: rgba(10, 19, 12, 0.75);
+  cursor: pointer;
+}
+
+.settings-toggle input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--bod-gold);
+}
+
+.settings-toggle span {
+  display: grid;
+  gap: 5px;
+}
+
+.settings-toggle strong {
+  color: var(--bod-text);
+}
+
+.settings-toggle small {
+  color: var(--bod-text-muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .settings-visibility {
+    grid-template-columns: 1fr;
+  }
+}

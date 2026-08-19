@@ -80,6 +80,16 @@
       ".write": "auth != null && auth.token.admin === true"
     },
 
+    "streamOverlay": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": "auth != null && auth.token.admin === true"
+    },
+
+    "twitchStatus": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
+      ".write": false
+    },
+
     "benefitTracker": {
       ".read": "auth != null && (auth.token.admin === true || root.child('users').child(auth.uid).child('status').val() === 'approved')",
       ".write": "auth != null && auth.token.admin === true"
