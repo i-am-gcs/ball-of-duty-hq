@@ -12,6 +12,7 @@ const menuItems = [
   { to: "/benefits", label: "Benefit Tracker", icon: "★" },
   { to: "/statistics", label: "Statisztikák", icon: "↗" },
   { to: "/stream-overlay", label: "Élő közvetítés", icon: "●" },
+  { to: "/tactics", label: "Taktikák", icon: "◇", linkedPlayerOnly: true },
   { to: "/settings", label: "Beállítások", icon: "⚙", adminOnly: true },
   { to: "/lineup", label: "Kezdő 11", icon: "⚽", adminOnly: true },
   { to: "/matchday-xi", label: "Matchday XI", icon: "🏆", playerOnly: true },
@@ -19,7 +20,7 @@ const menuItems = [
 ];
 
 function Sidebar({ open, onClose }) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const [twitchStatus, setTwitchStatus] = useState(null);
   const [now, setNow] = useState(Date.now());
 
@@ -39,6 +40,7 @@ function Sidebar({ open, onClose }) {
   );
   const visibleMenuItems = menuItems.filter((item) => {
     if (item.adminOnly) return isAdmin;
+    if (item.linkedPlayerOnly) return isAdmin || Boolean(profile?.playerId);
     if (item.playerOnly) return !isAdmin;
     return true;
   });

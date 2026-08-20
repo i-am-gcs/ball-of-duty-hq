@@ -17,6 +17,7 @@ const titles = {
   "/users": "Felhasználók",
   "/settings": "Beállítások",
   "/stream-overlay": "Élő közvetítés",
+  "/tactics": "Taktikák",
 };
 
 function Header({ onMenuClick }) {
@@ -25,7 +26,9 @@ function Header({ onMenuClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
 
-  const title = titles[location.pathname] ?? "Ball of Duty HQ";
+  const title = location.pathname.startsWith("/tactics/")
+    ? "Taktikai részletek"
+    : titles[location.pathname] ?? "Ball of Duty HQ";
   const displayName = user?.displayName || user?.email || "Csapattag";
   const initials = displayName
     .split(/\s+/)

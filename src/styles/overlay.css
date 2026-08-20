@@ -1,5 +1,5 @@
 .stream-overlay { display: grid; gap: 18px; }
-.stream-overlay__hero { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(330px, .75fr); gap: 18px; padding: 18px; }
+.stream-overlay__hero { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(310px, .62fr); gap: 14px; padding: 18px; }
 .stream-overlay__hero--cards-only { grid-template-columns: 1fr; }
 .stream-overlay__hero--cards-only .stream-overlay__cards { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .stream-overlay__video { display: grid; gap: 16px; min-width: 0; padding: 18px; border: 1px solid var(--bod-border-strong); border-radius: 18px; background: radial-gradient(circle at 20% 18%, rgba(245,189,22,.11), transparent 28%), linear-gradient(145deg, rgba(11,21,13,.98), rgba(15,28,19,.98)); }
@@ -8,23 +8,35 @@
 .stream-overlay__video-badge { display: inline-flex; width: max-content; padding: 7px 12px; border-radius: 999px; color: #1a1504; background: var(--bod-gold); font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .stream-overlay__player { position: relative; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; border: 1px solid rgba(245,189,22,.25); border-radius: 14px; background: #000; }
 .stream-overlay__player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.stream-overlay__cards { display: grid; align-content: start; gap: 14px; }
-.stream-overlay-card { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--bod-border-strong); border-radius: 16px; background: rgba(7,14,9,.8); }
+.stream-overlay__cards { display: grid; align-content: start; gap: 10px; }
+.stream-overlay-card { display: grid; gap: 7px; padding: 14px; border: 1px solid var(--bod-border-strong); border-radius: 14px; background: rgba(7,14,9,.8); }
+.stream-overlay-card h3 { font-size: 17px; line-height: 1.25; }
 .stream-overlay-card h3, .stream-overlay-card p { margin: 0; }
 .stream-overlay-card p, .stream-overlay-table__row small { color: var(--bod-text-muted); }
 .stream-overlay-card .button { width: max-content; margin-top: 4px; }
-.stream-overlay-table { display: grid; gap: 8px; }
-.stream-overlay-table__row { display: grid; grid-template-columns: 26px 30px minmax(0,1fr) auto auto; gap: 8px; align-items: center; padding: 9px 10px; border: 1px solid rgba(48,78,56,.8); border-radius: 12px; background: rgba(10,19,12,.9); }
-.stream-overlay-table__row img { width: 28px; height: 28px; object-fit: contain; }
+.stream-overlay-table { display: grid; gap: 6px; }
+.stream-overlay-table__row { display: grid; grid-template-columns: 22px 26px minmax(0,1fr) auto auto; gap: 7px; align-items: center; padding: 7px 8px; border: 1px solid rgba(48,78,56,.8); border-radius: 10px; background: rgba(10,19,12,.9); font-size: 13px; }
+.stream-overlay-table__row img { width: 24px; height: 24px; object-fit: contain; }
 .stream-overlay-table__row--bod { border-color: rgba(245,189,22,.55); background: rgba(245,189,22,.08); box-shadow: inset 0 0 0 1px rgba(245,189,22,.08); }
 .stream-overlay-table__row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stream-overlay-table__row b { color: var(--bod-gold); }
-.stream-overlay-player { display: grid; grid-template-columns: 26px 38px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid rgba(48,78,56,.8); border-radius: 12px; background: rgba(10,19,12,.9); }
-.stream-overlay-player > img, .stream-overlay-player__fallback { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.stream-overlay-player { display: grid; grid-template-columns: 22px 32px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 8px; border: 1px solid rgba(48,78,56,.8); border-radius: 10px; background: rgba(10,19,12,.9); font-size: 13px; }
+.stream-overlay-player > img, .stream-overlay-player__fallback { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
 .stream-overlay-player__fallback { display: grid; place-items: center; color: #191503; background: var(--bod-gold); font-weight: 900; }
 .stream-overlay-player > div { display: grid; min-width: 0; gap: 2px; }
 .stream-overlay-player strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stream-overlay-player small { color: var(--bod-text-muted); font-size: 11px; }
+.stream-overlay-player small { color: var(--bod-text-muted); font-size: 10px; }
 .stream-overlay-player b { color: var(--bod-gold); white-space: nowrap; }
+.stream-overlay-cycle { animation: stream-overlay-heading-in .45s ease both; }
+.stream-overlay-roll-row { opacity: 0; animation: stream-overlay-roll-in .58s cubic-bezier(.2,.75,.25,1) forwards; animation-delay: calc(var(--row-index, 0) * 110ms + 120ms); }
+.stream-overlay-dots { display: flex; justify-content: center; gap: 6px; min-height: 5px; margin-top: 2px; }
+.stream-overlay-dots span { width: 18px; height: 3px; border-radius: 999px; background: rgba(122, 145, 108, .3); transition: width .25s ease, background .25s ease; }
+.stream-overlay-dots span.active { width: 30px; background: var(--bod-gold); box-shadow: 0 0 10px rgba(245, 189, 22, .3); }
+.stream-overlay-metrics { display: flex; overflow: hidden; gap: 5px; margin-top: 3px; }
+.stream-overlay-metrics span { overflow: hidden; max-width: 7px; padding: 3px 0; border-radius: 999px; color: transparent; background: rgba(122, 145, 108, .24); font-size: 9px; font-weight: 900; white-space: nowrap; transition: max-width .35s ease, padding .35s ease, color .25s ease, background .25s ease; }
+.stream-overlay-metrics span.active { max-width: 140px; padding: 3px 8px; color: #171304; background: var(--bod-gold); }
+@keyframes stream-overlay-roll-in { from { opacity: 0; transform: translateY(-18px); filter: blur(2px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+@keyframes stream-overlay-heading-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .stream-overlay-cycle, .stream-overlay-roll-row { opacity: 1; animation: none; } }
 @media (max-width: 1180px) { .stream-overlay__hero { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .stream-overlay__hero, .stream-overlay__video { padding: 12px; } .stream-overlay__video-heading { align-items: flex-start; flex-direction: column; } .stream-overlay-table__row { grid-template-columns: 22px 26px minmax(0,1fr) auto; } .stream-overlay-table__row small { display: none; } }

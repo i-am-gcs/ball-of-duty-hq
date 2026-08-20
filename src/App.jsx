@@ -20,7 +20,10 @@ import SeasonDetails from "./pages/SeasonDetails";
 import LineupBuilder from "./pages/LineupBuilder";
 import MatchdayXIPage from "./pages/MatchdayXIPage";
 import Settings from "./pages/Settings";
-import StreamOverlay from "./pages/StreamOverlay";
+import StreamOverlay from "./pages/StreamOverlayCarousel";
+import Tactics from "./pages/Tactics";
+import TacticDetails from "./pages/TacticDetails";
+import PlayerLinkedRoute from "./components/auth/PlayerLinkedRoute";
 
 function App() {
   return (
@@ -45,6 +48,11 @@ function App() {
             <Route path="/seasons/:seasonId" element={<SeasonDetails />} />
             <Route path="/matchday-xi" element={<MatchdayXIPage />} />
             <Route path="/stream-overlay" element={<StreamOverlay />} />
+
+            <Route element={<PlayerLinkedRoute />}>
+              <Route path="/tactics" element={<Tactics />} />
+              <Route path="/tactics/:tacticSlug" element={<TacticDetails />} />
+            </Route>
 
             <Route element={<AdminRoute />}>
               <Route path="/lineup" element={<LineupBuilder />} />

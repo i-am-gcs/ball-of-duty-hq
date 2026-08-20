@@ -13,6 +13,7 @@ function Settings() {
   const [overlay, setOverlay] = useState({
     activeSeasonId: "",
     activeCompetitionId: "",
+    activeCompetitionIds: [],
     mode: "leagueTop5",
     rankingView: "standings",
     showTwitchPlayer: true,
@@ -40,6 +41,7 @@ function Settings() {
         setOverlay({
           activeSeasonId: String(overlayData?.activeSeasonId || ""),
           activeCompetitionId: String(overlayData?.activeCompetitionId || ""),
+          activeCompetitionIds: (overlayData?.activeCompetitionIds || []).map(String),
           mode: overlayData?.mode || "leagueTop5",
           rankingView: overlayData?.rankingView || "standings",
           showTwitchPlayer: overlayData?.showTwitchPlayer !== false,
@@ -79,18 +81,21 @@ function Settings() {
       return;
     }
 
-    const currentCompetitionExists = competitions.some(
-      (competition) =>
-        String(competition.id) === String(overlay.activeCompetitionId),
+    const validIds = new Set(
+      competitions.map((competition) => String(competition.id)),
+    );
+    const selectedIds = overlay.activeCompetitionIds.filter((id) =>
+      validIds.has(String(id)),
     );
 
-    if (!currentCompetitionExists) {
+    if (selectedIds.length !== overlay.activeCompetitionIds.length) {
       setOverlay((current) => ({
         ...current,
-        activeCompetitionId: String(competitions[0].id),
+        activeCompetitionIds: selectedIds,
+        activeCompetitionId: selectedIds[0] || "",
       }));
     }
-  }, [selectedSeason, competitions, overlay.activeCompetitionId]);
+  }, [selectedSeason, competitions, overlay.activeCompetitionIds]);
 
   async function submit(event) {
     event.preventDefault();
@@ -104,12 +109,14 @@ function Settings() {
         ...overlay,
         activeSeasonId: overlay.activeSeasonId,
         activeCompetitionId: overlay.activeCompetitionId,
+        activeCompetitionIds: overlay.activeCompetitionIds,
         mode: overlay.mode,
       });
 
       setOverlay({
         activeSeasonId: String(nextOverlay.activeSeasonId || ""),
         activeCompetitionId: String(nextOverlay.activeCompetitionId || ""),
+        activeCompetitionIds: (nextOverlay.activeCompetitionIds || []).map(String),
         mode: nextOverlay.mode || "leagueTop5",
         rankingView: nextOverlay.rankingView || "standings",
         showTwitchPlayer: nextOverlay.showTwitchPlayer !== false,
@@ -149,6 +156,7 @@ function Settings() {
                 ...current,
                 activeSeasonId: event.target.value,
                 activeCompetitionId: "",
+                activeCompetitionIds: [],
               }))
             }
           >
@@ -216,26 +224,45 @@ function Settings() {
           </label>
         </fieldset>
 
-        <label>
-          <span>Aktív liga / competition</span>
-          <select
-            value={overlay.activeCompetitionId}
-            onChange={(event) =>
-              setOverlay((current) => ({
-                ...current,
-                activeCompetitionId: event.target.value,
-              }))
-            }
-            disabled={!selectedSeason || competitions.length === 0}
-          >
-            <option value="">Válassz ligát</option>
-            {competitions.map((competition) => (
-              <option key={competition.id} value={competition.id}>
-                {competition.shortName || competition.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <fieldset className="settings-visibility settings-competitions">
+          <legend>Streamben váltakozó ligák</legend>
+
+          {competitions.length === 0 && (
+            <p className="muted">A kiválasztott szezonhoz nincs beállított liga.</p>
+          )}
+
+          {competitions.map((competition) => {
+            const competitionId = String(competition.id);
+
+            return (
+              <label className="settings-toggle" key={competition.id}>
+                <input
+                  type="checkbox"
+                  checked={overlay.activeCompetitionIds.includes(competitionId)}
+                  onChange={(event) =>
+                    setOverlay((current) => {
+                      const ids = event.target.checked
+                        ? [...current.activeCompetitionIds, competitionId]
+                        : current.activeCompetitionIds.filter(
+                            (id) => id !== competitionId,
+                          );
+
+                      return {
+                        ...current,
+                        activeCompetitionIds: ids,
+                        activeCompetitionId: ids[0] || "",
+                      };
+                    })
+                  }
+                />
+                <span>
+                  <strong>{competition.shortName || competition.name}</strong>
+                  <small>Megjelenik a tabella- és játékos-körforgásban.</small>
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
 
         <label>
           <span>Overlay mód</span>

@@ -339,40 +339,62 @@ function mergePlayerStats(existing, incoming) {
   /*
    * Összegző statok.
    */
-  existing.points += incoming.points;
+  existing.points = Math.max(existing.points ?? 0, incoming.points ?? 0);
 
-  existing.matchRating += incoming.matchRating;
+  existing.matchRating = Math.max(
+    existing.matchRating ?? 0,
+    incoming.matchRating ?? 0,
+  );
 
-  existing.goals = (existing.goals ?? 0) + (incoming.goals ?? 0);
+  existing.goals = Math.max(existing.goals ?? 0, incoming.goals ?? 0);
 
-  existing.assists = (existing.assists ?? 0) + (incoming.assists ?? 0);
+  existing.assists = Math.max(existing.assists ?? 0, incoming.assists ?? 0);
 
-  existing.passesMade = (existing.passesMade ?? 0) + (incoming.passesMade ?? 0);
+  existing.passesMade = Math.max(
+    existing.passesMade ?? 0,
+    incoming.passesMade ?? 0,
+  );
 
-  existing.tacklesMade =
-    (existing.tacklesMade ?? 0) + (incoming.tacklesMade ?? 0);
+  existing.tacklesMade = Math.max(
+    existing.tacklesMade ?? 0,
+    incoming.tacklesMade ?? 0,
+  );
 
-  existing.shots = (existing.shots ?? 0) + (incoming.shots ?? 0);
+  existing.shots = Math.max(existing.shots ?? 0, incoming.shots ?? 0);
 
-  existing.possessionWon =
-    (existing.possessionWon ?? 0) + (incoming.possessionWon ?? 0);
+  existing.possessionWon = Math.max(
+    existing.possessionWon ?? 0,
+    incoming.possessionWon ?? 0,
+  );
 
-  existing.interceptions =
-    (existing.interceptions ?? 0) + (incoming.interceptions ?? 0);
+  existing.interceptions = Math.max(
+    existing.interceptions ?? 0,
+    incoming.interceptions ?? 0,
+  );
 
-  existing.standingTackles =
-    (existing.standingTackles ?? 0) + (incoming.standingTackles ?? 0);
+  existing.standingTackles = Math.max(
+    existing.standingTackles ?? 0,
+    incoming.standingTackles ?? 0,
+  );
 
-  existing.slidingTackles =
-    (existing.slidingTackles ?? 0) + (incoming.slidingTackles ?? 0);
+  existing.slidingTackles = Math.max(
+    existing.slidingTackles ?? 0,
+    incoming.slidingTackles ?? 0,
+  );
 
-  existing.saves = (existing.saves ?? 0) + (incoming.saves ?? 0);
+  existing.saves = Math.max(existing.saves ?? 0, incoming.saves ?? 0);
 
-  existing.cleanSheet = (existing.cleanSheet ?? 0) + (incoming.cleanSheet ?? 0);
+  existing.cleanSheet = Math.max(
+    existing.cleanSheet ?? 0,
+    incoming.cleanSheet ?? 0,
+  );
 
-  existing.yellowCard = (existing.yellowCard ?? 0) + (incoming.yellowCard ?? 0);
+  existing.yellowCard = Math.max(
+    existing.yellowCard ?? 0,
+    incoming.yellowCard ?? 0,
+  );
 
-  existing.redCard = (existing.redCard ?? 0) + (incoming.redCard ?? 0);
+  existing.redCard = Math.max(existing.redCard ?? 0, incoming.redCard ?? 0);
 
   /*
    * MECCSSZÁMOT NEM ADJUK ÖSSZE.
@@ -787,25 +809,19 @@ export async function getSeasonStatistics({
         weekly,
       });
 
-  const topScorers = isAll
-    ? await getSeasonAllCompetitionTopScorers({
-        competitions,
-        weekly,
-      })
-    : await getSeasonTopScorers({
-        competition: competitions[0],
-        weekly,
-      });
-
-  const topAssists = isAll
-    ? await getSeasonAllCompetitionTopAssists({
-        competitions,
-        weekly,
-      })
-    : await getSeasonTopAssists({
-        competition: competitions[0],
-        weekly,
-      });
+  /*
+   * A jatekos pozicionkent kulon sorokban szerepelhet a VPG-n.
+   * A mergePositionLeaderboards ezeket a teljesitmenystatokat helyesen
+   * osszeadja, mikozben a meccsszamnal csak a legnagyobb erteket tartja
+   * meg. A gol- es assistlista ezert ugyanebből az osszefesult listabol
+   * keszul, nem a poziciokat figyelmen kivul hagyo kulon endpointokbol.
+   */
+  const topScorers = [...playerStats].sort(
+    (a, b) => (b.goals ?? 0) - (a.goals ?? 0),
+  );
+  const topAssists = [...playerStats].sort(
+    (a, b) => (b.assists ?? 0) - (a.assists ?? 0),
+  );
 
   return {
     seasonId: season.id ?? null,

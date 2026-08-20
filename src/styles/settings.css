@@ -90,3 +90,5 @@
     grid-template-columns: 1fr;
   }
 }
+.settings-competitions { align-content: start; }
+.settings-competitions > .muted { margin: 0; }
