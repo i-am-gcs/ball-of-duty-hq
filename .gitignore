@@ -1,9 +1,25 @@
 node_modules
-.env
-.env.*
 dist
 vite*.log
 firebase-debug.log
 
-!bot/.env.example
-bot/serviceAccountKey.json
+# Local environment configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Keep shareable environment templates in the repository.
+!**/.env.example
+!**/.env.template
+
+# Firebase Admin credentials and other local credential exports
+serviceAccountKey.json
+**/serviceAccountKey.json
+firebase-service-account*.json
+credentials.json
+**/credentials.json
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
