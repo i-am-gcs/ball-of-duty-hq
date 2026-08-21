@@ -1,3 +1,8 @@
+import {
+  filterMatchesByCompetition,
+  getVpgTeamMatches,
+} from "./vpgMatchService.js";
+
 const VPG_API_BASE = "https://api.virtualprogaming.com/public";
 
 const VPG_IMAGE_BASE =
@@ -5,11 +10,14 @@ const VPG_IMAGE_BASE =
 
 const BOD_TEAM_SLUG = "pannonia-fc";
 const BOD_TEAM_NAME = "Ball of Duty CF";
+const BOD_TEAM_ID = 36206;
+const matchPlayerDataCache = new Map();
+const matchRequestWaiters = [];
+let activeMatchRequests = 0;
+const MAX_PARALLEL_MATCH_REQUESTS = 6;
 
 /**
- * A fő statisztikához használt VPG leaderboardok.
- *
- * highest_rated NEM kell.
+ * Heti nézethez és kompatibilitási tartalékként használt leaderboardok.
  */
 export const VPG_POSITION_LEADERBOARDS = [
   "top_gk",
@@ -22,6 +30,7 @@ export const VPG_POSITION_LEADERBOARDS = [
 ];
 
 export const VPG_LEADERBOARD_TYPES = {
+  HIGHEST_RATED: "highest_rated",
   TOP_GK: "top_gk",
   TOP_CB: "top_cb",
   TOP_FB: "top_fb",
@@ -279,11 +288,8 @@ export function normalizeVpgPlayerStat(player) {
      */
     matchRating: Number(player.match_rating ?? 0),
 
-    /*
-     * A meccsszámot később MAX alapján kezeljük,
-     * mert ugyanaz a játékos több pozíciós leaderboardon
-     * is szerepelhet.
-     */
+    // Pozíciós rekordnál ezt nem használjuk; a hiteles meccsszámot a
+    // highest_rated leaderboard adja.
     matchesPlayed: Number(player.matches_played ?? 0),
 
     goals: player.goals != null ? Number(player.goals) : null,
@@ -302,12 +308,6 @@ export function normalizeVpgPlayerStat(player) {
 
     tackleSuccess:
       player.tackle_success != null ? Number(player.tackle_success) : null,
-
-    possessionWon:
-      player.possession_won != null ? Number(player.possession_won) : null,
-
-    interceptions:
-      player.interceptions != null ? Number(player.interceptions) : null,
 
     standingTackles:
       player.standing_tackles != null ? Number(player.standing_tackles) : null,
@@ -335,101 +335,62 @@ export function normalizeVpgPlayerStat(player) {
    PLAYER MERGE
    ========================================================= */
 
-function mergePlayerStats(existing, incoming) {
-  /*
-   * Összegző statok.
-   */
-  existing.points = Math.max(existing.points ?? 0, incoming.points ?? 0);
+const SUM_STAT_FIELDS = [
+  "goals",
+  "assists",
+  "passesMade",
+  "tacklesMade",
+  "shots",
+  "standingTackles",
+  "slidingTackles",
+  "saves",
+  "cleanSheet",
+  "yellowCard",
+  "redCard",
+];
 
-  existing.matchRating = Math.max(
-    existing.matchRating ?? 0,
-    incoming.matchRating ?? 0,
-  );
+/**
+ * A nyers VPG meccsadatokra alkalmazott saját pontképlet.
+ */
+export function calculateVpgPoints(player) {
+  const points =
+    Number(player.matchRating ?? 0) +
+    Number(player.goals ?? 0) * 10 +
+    Number(player.assists ?? 0) * 7.5 +
+    Number(player.passesMade ?? 0) * 0.2 +
+    Number(player.tacklesMade ?? 0) * 2 +
+    Number(player.shots ?? 0) * 0.3 +
+    Number(player.saves ?? 0) +
+    Number(player.cleanSheet ?? 0) * 10;
 
-  existing.goals = Math.max(existing.goals ?? 0, incoming.goals ?? 0);
+  return Math.round((points + Number.EPSILON) * 10) / 10;
+}
 
-  existing.assists = Math.max(existing.assists ?? 0, incoming.assists ?? 0);
+const RATE_STAT_FIELDS = [
+  "passAccuracy",
+  "tackleSuccess",
+  "saveSuccess",
+  "dribbleSuccess",
+];
 
-  existing.passesMade = Math.max(
-    existing.passesMade ?? 0,
-    incoming.passesMade ?? 0,
-  );
-
-  existing.tacklesMade = Math.max(
-    existing.tacklesMade ?? 0,
-    incoming.tacklesMade ?? 0,
-  );
-
-  existing.shots = Math.max(existing.shots ?? 0, incoming.shots ?? 0);
-
-  existing.possessionWon = Math.max(
-    existing.possessionWon ?? 0,
-    incoming.possessionWon ?? 0,
-  );
-
-  existing.interceptions = Math.max(
-    existing.interceptions ?? 0,
-    incoming.interceptions ?? 0,
-  );
-
-  existing.standingTackles = Math.max(
-    existing.standingTackles ?? 0,
-    incoming.standingTackles ?? 0,
-  );
-
-  existing.slidingTackles = Math.max(
-    existing.slidingTackles ?? 0,
-    incoming.slidingTackles ?? 0,
-  );
-
-  existing.saves = Math.max(existing.saves ?? 0, incoming.saves ?? 0);
-
-  existing.cleanSheet = Math.max(
-    existing.cleanSheet ?? 0,
-    incoming.cleanSheet ?? 0,
-  );
-
-  existing.yellowCard = Math.max(
-    existing.yellowCard ?? 0,
-    incoming.yellowCard ?? 0,
-  );
-
-  existing.redCard = Math.max(existing.redCard ?? 0, incoming.redCard ?? 0);
-
-  /*
-   * MECCSSZÁMOT NEM ADJUK ÖSSZE.
-   *
-   * Ugyanaz a játékos szerepelhet
-   * CB + CDM + CAM stb. leaderboardon.
-   *
-   * A VPG ugyanazt a meccsszámot
-   * adhatja vissza több helyen.
-   */
-  existing.matchesPlayed = Math.max(
-    existing.matchesPlayed,
-    incoming.matchesPlayed,
-  );
-
-  /*
-   * A százalékos / rate statoknál
-   * megtartjuk az első tényleges értéket.
-   *
-   * Ezeket nem adjuk össze.
-   */
-  if (existing.passAccuracy == null && incoming.passAccuracy != null) {
-    existing.passAccuracy = incoming.passAccuracy;
+function mergeStats(existing, incoming, mode) {
+  for (const field of SUM_STAT_FIELDS) {
+    existing[field] =
+      mode === "max"
+        ? Math.max(existing[field] ?? 0, incoming[field] ?? 0)
+        : (existing[field] ?? 0) + (incoming[field] ?? 0);
   }
 
-  if (existing.tackleSuccess == null && incoming.tackleSuccess != null) {
-    existing.tackleSuccess = incoming.tackleSuccess;
-  }
+  // A százalékos statok nem összegezhetők. A CAM/CDM párnál a nagyobb
+  // értéket, más pozíciók között az első tényleges értéket tartjuk meg.
+  for (const field of RATE_STAT_FIELDS) {
+    if (incoming[field] == null) continue;
 
-  if (existing.saveSuccess == null && incoming.saveSuccess != null) {
-    existing.saveSuccess = incoming.saveSuccess;
-  }
-
-  if (existing.dribbleSuccess == null && incoming.dribbleSuccess != null) {
-    existing.dribbleSuccess = incoming.dribbleSuccess;
+    if (mode === "max") {
+      existing[field] = Math.max(existing[field] ?? 0, incoming[field]);
+    } else if (existing[field] == null) {
+      existing[field] = incoming[field];
+    }
   }
 }
 
@@ -440,34 +401,84 @@ function mergePlayerStats(existing, incoming) {
 export function mergePositionLeaderboards(leaderboards) {
   const playersByUsername = new Map();
 
+  const highestRated = leaderboards.find(
+    ({ leaderboard }) => leaderboard === VPG_LEADERBOARD_TYPES.HIGHEST_RATED,
+  );
+
+  for (const rawPlayer of highestRated?.players ?? []) {
+    const player = normalizeVpgPlayerStat(rawPlayer);
+    const emptyPlayer = {
+      ...player,
+      points: 0,
+      _centralMidfieldStats: null,
+    };
+
+    for (const field of SUM_STAT_FIELDS) emptyPlayer[field] = 0;
+    for (const field of RATE_STAT_FIELDS) emptyPlayer[field] = null;
+
+    playersByUsername.set(player.username.toLowerCase(), emptyPlayer);
+  }
+
   for (const leaderboard of leaderboards) {
+    if (leaderboard.leaderboard === VPG_LEADERBOARD_TYPES.HIGHEST_RATED) {
+      continue;
+    }
+
+    const isCentralMidfield =
+      leaderboard.leaderboard === VPG_LEADERBOARD_TYPES.TOP_CAM ||
+      leaderboard.leaderboard === VPG_LEADERBOARD_TYPES.TOP_CDM;
+
     for (const rawPlayer of leaderboard.players) {
       const player = normalizeVpgPlayerStat(rawPlayer);
 
       const key = player.username.toLowerCase();
 
       if (!playersByUsername.has(key)) {
-        playersByUsername.set(key, {
+        const emptyPlayer = {
           ...player,
-        });
+          points: 0,
+          matchRating: 0,
+          matchesPlayed: 0,
+          _centralMidfieldStats: null,
+        };
 
-        continue;
+        for (const field of SUM_STAT_FIELDS) emptyPlayer[field] = 0;
+        for (const field of RATE_STAT_FIELDS) emptyPlayer[field] = null;
+
+        playersByUsername.set(key, emptyPlayer);
       }
 
       const existing = playersByUsername.get(key);
 
-      mergePlayerStats(existing, player);
+      if (isCentralMidfield) {
+        if (!existing._centralMidfieldStats) {
+          existing._centralMidfieldStats = { ...player };
+        } else {
+          mergeStats(existing._centralMidfieldStats, player, "max");
+        }
+      } else {
+        mergeStats(existing, player, "sum");
+      }
     }
   }
 
-  return [...playersByUsername.values()].sort((a, b) => b.points - a.points);
+  return [...playersByUsername.values()]
+    .map((player) => {
+      if (player._centralMidfieldStats) {
+        mergeStats(player, player._centralMidfieldStats, "sum");
+      }
+      delete player._centralMidfieldStats;
+      player.points = calculateVpgPoints(player);
+      return player;
+    })
+    .sort((a, b) => b.points - a.points);
 }
 
 /* =========================================================
    SINGLE COMPETITION PLAYER STATS
    ========================================================= */
 
-export async function getSeasonPlayerStats({
+async function getSeasonLeaderboardPlayerStats({
   competition,
   weekly = false,
 } = {}) {
@@ -478,20 +489,175 @@ export async function getSeasonPlayerStats({
   }
 
   const leaderboards = await Promise.all(
-    VPG_POSITION_LEADERBOARDS.map(async (leaderboard) => {
-      const players = await getAllVpgTeamLeaderboard(leaderboard, {
-        season: vpgSeasonId,
-        weekly,
-      });
+    [VPG_LEADERBOARD_TYPES.HIGHEST_RATED, ...VPG_POSITION_LEADERBOARDS].map(
+      async (leaderboard) => {
+        const players = await getAllVpgTeamLeaderboard(leaderboard, {
+          season: vpgSeasonId,
+          weekly,
+        });
 
-      return {
-        leaderboard,
-        players,
-      };
-    }),
+        return {
+          leaderboard,
+          players,
+        };
+      },
+    ),
   );
 
   return mergePositionLeaderboards(leaderboards);
+}
+
+async function getVpgMatchPlayerData(matchId) {
+  const key = String(matchId);
+
+  if (matchPlayerDataCache.has(key)) {
+    return matchPlayerDataCache.get(key);
+  }
+
+  const request = (async () => {
+    if (activeMatchRequests >= MAX_PARALLEL_MATCH_REQUESTS) {
+      await new Promise((resolve) => matchRequestWaiters.push(resolve));
+    } else {
+      activeMatchRequests += 1;
+    }
+
+    try {
+      const response = await fetch(`${VPG_API_BASE}/matches/${matchId}/data/`);
+
+      if (!response.ok) {
+        throw new Error(`VPG meccsstatisztika API hiba: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("A VPG meccsstatisztika ismeretlen formátumú.");
+      }
+
+      return data;
+    } finally {
+      const nextRequest = matchRequestWaiters.shift();
+      if (nextRequest) nextRequest();
+      else activeMatchRequests -= 1;
+    }
+  })();
+
+  matchPlayerDataCache.set(key, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    matchPlayerDataCache.delete(key);
+    throw error;
+  }
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, worker),
+  );
+
+  return results;
+}
+
+function aggregateMatchPlayerStats(matchPlayerLists) {
+  const playersByUsername = new Map();
+
+  for (const matchPlayers of matchPlayerLists) {
+    for (const rawPlayer of matchPlayers) {
+      if (Number(rawPlayer.team_id) !== BOD_TEAM_ID) continue;
+
+      const player = normalizeVpgPlayerStat({
+        ...rawPlayer,
+        user_avatar: rawPlayer.user_avatar ?? rawPlayer.avatar,
+      });
+      const key = player.username.toLowerCase();
+
+      if (!playersByUsername.has(key)) {
+        const emptyPlayer = {
+          ...player,
+          points: 0,
+          matchRating: 0,
+          matchesPlayed: 0,
+          positions: {},
+        };
+
+        for (const field of SUM_STAT_FIELDS) emptyPlayer[field] = 0;
+        for (const field of RATE_STAT_FIELDS) emptyPlayer[field] = null;
+        playersByUsername.set(key, emptyPlayer);
+      }
+
+      const existing = playersByUsername.get(key);
+      existing.matchRating += player.matchRating;
+      existing.matchesPlayed += 1;
+      mergeStats(existing, player, "sum");
+
+      const position = String(rawPlayer.position || "").toUpperCase();
+      if (position) {
+        existing.positions[position] =
+          (existing.positions[position] ?? 0) + 1;
+      }
+    }
+  }
+
+  return [...playersByUsername.values()]
+    .map((player) => ({
+      ...player,
+      matchRating: Math.round((player.matchRating + Number.EPSILON) * 10) / 10,
+      points: calculateVpgPoints(player),
+    }))
+    .sort((a, b) => b.points - a.points);
+}
+
+async function getSeasonMatchPlayerStats({ competition } = {}) {
+  const completedMatches = await getVpgTeamMatches("complete");
+  const competitionMatches = filterMatchesByCompetition(
+    completedMatches,
+    competition,
+  );
+
+  if (competitionMatches.length === 0) return [];
+
+  const matchPlayerLists = await mapWithConcurrency(
+    competitionMatches,
+    6,
+    (match) => getVpgMatchPlayerData(match.id),
+  );
+
+  return aggregateMatchPlayerStats(matchPlayerLists);
+}
+
+export async function getSeasonPlayerStats({
+  competition,
+  weekly = false,
+} = {}) {
+  // A publikus meccs-adat endpointnak nincs heti szűrése; ezt a ritkán
+  // használt nézetet változatlanul a VPG leaderboard szolgálja ki.
+  if (weekly) {
+    return getSeasonLeaderboardPlayerStats({ competition, weekly });
+  }
+
+  const matchStats = await getSeasonMatchPlayerStats({ competition });
+
+  // A VPG completed-meccs feedje nem őrzi az összes régi seasont. Ha az
+  // adott competitionből egyetlen meccs sem érhető el, a történelmi
+  // loyalty és örökranglista miatt megtartjuk a régi leaderboard-forrást.
+  if (matchStats.length === 0) {
+    return getSeasonLeaderboardPlayerStats({ competition, weekly });
+  }
+
+  return matchStats;
 }
 
 /* =========================================================
@@ -577,12 +743,6 @@ export async function getSeasonAllCompetitionPlayerStats({
 
       existing.shots = (existing.shots ?? 0) + (player.shots ?? 0);
 
-      existing.possessionWon =
-        (existing.possessionWon ?? 0) + (player.possessionWon ?? 0);
-
-      existing.interceptions =
-        (existing.interceptions ?? 0) + (player.interceptions ?? 0);
-
       existing.standingTackles =
         (existing.standingTackles ?? 0) + (player.standingTackles ?? 0);
 
@@ -598,6 +758,12 @@ export async function getSeasonAllCompetitionPlayerStats({
         (existing.yellowCard ?? 0) + (player.yellowCard ?? 0);
 
       existing.redCard = (existing.redCard ?? 0) + (player.redCard ?? 0);
+
+      for (const [position, count] of Object.entries(player.positions ?? {})) {
+        existing.positions = existing.positions ?? {};
+        existing.positions[position] =
+          (existing.positions[position] ?? 0) + Number(count ?? 0);
+      }
 
       /*
        * Rate / százalékos statok:
@@ -624,6 +790,9 @@ export async function getSeasonAllCompetitionPlayerStats({
   return [...playersByUsername.values()]
     .map((player) => {
       player.matchesPlayed = player._competitionMatches;
+      player.matchRating =
+        Math.round((player.matchRating + Number.EPSILON) * 10) / 10;
+      player.points = calculateVpgPoints(player);
 
       delete player._competitionMatches;
 
@@ -789,6 +958,7 @@ export async function getSeasonStatistics({
     throw new Error("Nincs megadva BOD szezon.");
   }
 
+  const isAll = !competitionId || competitionId === "ALL";
   const competitions = getVpgCompetitions(season, competitionId);
 
   if (competitions.length === 0) {
@@ -797,11 +967,16 @@ export async function getSeasonStatistics({
     );
   }
 
-  const isAll = !competitionId || competitionId === "ALL";
+  // ALL módban minden konfigurált sorozat meccseit feldolgozzuk. A kimeneti
+  // competition-lista továbbra is VPG seasonId szerint deduplikált marad,
+  // ahogy azt a felület eddig is várta.
+  const statsCompetitions = isAll
+    ? (season.competitions ?? []).filter(hasVpgPlayerStats)
+    : competitions;
 
   const playerStats = isAll
     ? await getSeasonAllCompetitionPlayerStats({
-        competitions,
+        competitions: statsCompetitions,
         weekly,
       })
     : await getSeasonPlayerStats({
@@ -810,11 +985,8 @@ export async function getSeasonStatistics({
       });
 
   /*
-   * A jatekos pozicionkent kulon sorokban szerepelhet a VPG-n.
-   * A mergePositionLeaderboards ezeket a teljesitmenystatokat helyesen
-   * osszeadja, mikozben a meccsszamnal csak a legnagyobb erteket tartja
-   * meg. A gol- es assistlista ezert ugyanebből az osszefesult listabol
-   * keszul, nem a poziciokat figyelmen kivul hagyo kulon endpointokbol.
+   * A góllista és az assistlista ugyanabból a meccsszinten összesített
+   * játékoslistából készül, mint a benefithez használt pontszám.
    */
   const topScorers = [...playerStats].sort(
     (a, b) => (b.goals ?? 0) - (a.goals ?? 0),

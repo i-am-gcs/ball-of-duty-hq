@@ -6,6 +6,8 @@ const VPG_IMAGE_BASE =
 const BOD_TEAM_SLUG = "pannonia-fc";
 const BOD_TEAM_ID = 36206;
 const BOD_TEAM_NAME = "Ball of Duty CF";
+const teamMatchesCache = new Map();
+const TEAM_MATCH_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
  * VPG csapatlogó URL.
@@ -51,36 +53,61 @@ function isBodTeam(teamId, teamName) {
  * - complete
  */
 export async function getVpgTeamMatches(matchStatus = "scheduled") {
-  const params = new URLSearchParams();
+  const cached = teamMatchesCache.get(matchStatus);
 
-  params.set("match_status", matchStatus);
-  params.set("limit", "128");
-  params.set("offset", "0");
-
-  const url =
-    `${VPG_API_BASE}/teams/${BOD_TEAM_SLUG}/matches/?` + params.toString();
-
-  console.log("VPG TEAM MATCHES REQUEST:", url);
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`VPG csapat meccsek API hiba: ${response.status}`);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.request;
   }
 
-  const data = await response.json();
+  const request = (async () => {
+    const pageSize = 100;
+    const matches = [];
+    let offset = 0;
+    let totalCount = null;
 
-  console.log("VPG TEAM MATCHES RESPONSE:", data);
+    while (totalCount === null || matches.length < totalCount) {
+      const params = new URLSearchParams();
+      params.set("match_status", matchStatus);
+      params.set("limit", String(pageSize));
+      params.set("offset", String(offset));
 
-  if (!data || !Array.isArray(data.data)) {
-    console.error("VPG csapat meccsek API ismeretlen válasz:", data);
+      const url =
+        `${VPG_API_BASE}/teams/${BOD_TEAM_SLUG}/matches/?` + params.toString();
+      const response = await fetch(url);
 
-    throw new Error(
-      "A VPG csapat meccsek API nem megfelelő formátumú adatot adott vissza.",
-    );
+      if (!response.ok) {
+        throw new Error(`VPG csapat meccsek API hiba: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data || !Array.isArray(data.data)) {
+        throw new Error(
+          "A VPG csapat meccsek API nem megfelelő formátumú adatot adott vissza.",
+        );
+      }
+
+      matches.push(...data.data);
+      totalCount = Number(data.count ?? matches.length);
+
+      if (data.data.length === 0 || data.data.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    return matches;
+  })();
+
+  teamMatchesCache.set(matchStatus, {
+    request,
+    expiresAt: Date.now() + TEAM_MATCH_CACHE_TTL_MS,
+  });
+
+  try {
+    return await request;
+  } catch (error) {
+    teamMatchesCache.delete(matchStatus);
+    throw error;
   }
-
-  return data.data;
 }
 
 /**

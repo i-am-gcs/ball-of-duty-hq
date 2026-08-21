@@ -8,6 +8,7 @@ import { benefitTrackerData } from "../data/benefitTracker";
 import { getPlayers } from "./playerService";
 
 import {
+  getSeasonAllCompetitionPlayerStats,
   getSeasonPlayerStats,
   getVpgCompetitions,
 } from "./vpgPlayerStatsService";
@@ -214,6 +215,10 @@ async function loadSeasonVpgData(season) {
   }
 
   const competitions = getVpgCompetitions(season, "ALL");
+  const configuredCompetitions = (season.competitions ?? []).filter(
+    (competition) =>
+      competition.vpg?.seasonId ?? competition.vpgSeasonId ?? null,
+  );
 
   if (!competitions.length) {
     return {
@@ -224,10 +229,23 @@ async function loadSeasonVpgData(season) {
 
   const competitionStats = await Promise.all(
     competitions.map(async (competition) => {
-      const stats = await getSeasonPlayerStats({
-        competition,
-        weekly: false,
-      });
+      const vpgSeasonId =
+        competition.vpg?.seasonId ?? competition.vpgSeasonId ?? null;
+      const seasonCompetitions = configuredCompetitions.filter(
+        (item) =>
+          String(item.vpg?.seasonId ?? item.vpgSeasonId ?? "") ===
+          String(vpgSeasonId),
+      );
+      const stats =
+        seasonCompetitions.length > 1
+          ? await getSeasonAllCompetitionPlayerStats({
+              competitions: seasonCompetitions,
+              weekly: false,
+            })
+          : await getSeasonPlayerStats({
+              competition,
+              weekly: false,
+            });
 
       return {
         competition,

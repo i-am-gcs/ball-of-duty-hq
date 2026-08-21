@@ -303,7 +303,6 @@ function Statistics() {
                 passesMade: Number(player.passesMade ?? 0),
                 tacklesMade: Number(player.tacklesMade ?? 0),
                 shots: Number(player.shots ?? 0),
-                interceptions: Number(player.interceptions ?? 0),
                 saves: Number(player.saves ?? 0),
                 cleanSheet: Number(player.cleanSheet ?? 0),
               });
@@ -320,7 +319,6 @@ function Statistics() {
             existing.passesMade += Number(player.passesMade ?? 0);
             existing.tacklesMade += Number(player.tacklesMade ?? 0);
             existing.shots += Number(player.shots ?? 0);
-            existing.interceptions += Number(player.interceptions ?? 0);
             existing.saves += Number(player.saves ?? 0);
             existing.cleanSheet += Number(player.cleanSheet ?? 0);
           }
@@ -349,7 +347,6 @@ function Statistics() {
       ["assists", "Legtöbb assist", "🎯", 0, " assist"],
       ["passesMade", "Legtöbb passz", "↗️", 0, " passz"],
       ["tacklesMade", "Legtöbb szerelés", "🛡️", 0, " szerelés"],
-      ["interceptions", "Legtöbb interception", "🧱", 0, ""],
       ["shots", "Legtöbb lövés", "🎯", 0, " lövés"],
       ["saves", "Legtöbb védés", "🧤", 0, " save"],
       ["cleanSheet", "Legtöbb clean sheet", "🧤", 0, ""],
@@ -752,13 +749,6 @@ function Statistics() {
                         </span>
                       </th>
 
-                      <th onClick={() => handleSort("interceptions")}>
-                        Interception{" "}
-                        <span className="sort-indicator">
-                          {getSortIndicator("interceptions")}
-                        </span>
-                      </th>
-
                       <th onClick={() => handleSort("saves")}>
                         Save{" "}
                         <span className="sort-indicator">
@@ -805,8 +795,6 @@ function Statistics() {
                         <td>{player.tacklesMade ?? "–"}</td>
 
                         <td>{player.shots ?? "–"}</td>
-
-                        <td>{player.interceptions ?? "–"}</td>
 
                         <td>{player.saves ?? "–"}</td>
 
