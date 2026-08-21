@@ -895,28 +895,16 @@ function SeasonDetails() {
 
                               <div className="season-details__match-teams">
                                 <div
-                                  className={
+                                  className={`season-details__match-team${
                                     match.isHome
-                                      ? "season-details__match-team season-details__match-team--bod"
-                                      : "season-details__match-team"
-                                  }
+                                      ? " season-details__match-team--bod"
+                                      : ""
+                                  }`}
                                 >
-                                  {match.isHome ? (
-                                    <>
-                                      <span>Ball of Duty CF</span>
+                                  <span>{match.homeName}</span>
 
-                                      {match.homeLogo && (
-                                        <img src={match.homeLogo} alt="" />
-                                      )}
-                                    </>
-                                  ) : (
-                                    <>
-                                      {match.awayLogo && (
-                                        <img src={match.awayLogo} alt="" />
-                                      )}
-
-                                      <span>Ball of Duty CF</span>
-                                    </>
+                                  {match.homeLogo && (
+                                    <img src={match.homeLogo} alt="" />
                                   )}
                                 </div>
 
@@ -924,24 +912,18 @@ function SeasonDetails() {
                                   VS
                                 </strong>
 
-                                <div className="season-details__match-team">
-                                  {match.isHome ? (
-                                    <>
-                                      {match.awayLogo && (
-                                        <img src={match.awayLogo} alt="" />
-                                      )}
-
-                                      <span>{match.opponentName}</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span>{match.opponentName}</span>
-
-                                      {match.homeLogo && (
-                                        <img src={match.homeLogo} alt="" />
-                                      )}
-                                    </>
+                                <div
+                                  className={`season-details__match-team${
+                                    match.isAway
+                                      ? " season-details__match-team--bod"
+                                      : ""
+                                  }`}
+                                >
+                                  {match.awayLogo && (
+                                    <img src={match.awayLogo} alt="" />
                                   )}
+
+                                  <span>{match.awayName}</span>
                                 </div>
                               </div>
 
@@ -1008,10 +990,7 @@ function SeasonDetails() {
                     {competitionResults.length > 0 && (
                       <div className="season-details__results-list">
                         {competitionResults.slice(0, 5).map((match) => (
-                          <article
-                            className="season-details__result"
-                            key={match.id}
-                          >
+                          <article className="season-details__result" key={match.id}>
                             <div className="season-details__result-round">
                               <span>{match.matchDay}.</span>
                               <small>FORDULÓ</small>
@@ -1025,28 +1004,16 @@ function SeasonDetails() {
 
                             <div className="season-details__result-teams">
                               <div
-                                className={
+                                className={`season-details__result-team${
                                   match.isHome
-                                    ? "season-details__result-team season-details__result-team--bod"
-                                    : "season-details__result-team"
-                                }
+                                    ? " season-details__result-team--bod"
+                                    : ""
+                                }`}
                               >
-                                {match.isHome ? (
-                                  <>
-                                    <span>Ball of Duty CF</span>
+                                <span>{match.homeName}</span>
 
-                                    {match.homeLogo && (
-                                      <img src={match.homeLogo} alt="" />
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    {match.awayLogo && (
-                                      <img src={match.awayLogo} alt="" />
-                                    )}
-
-                                    <span>Ball of Duty CF</span>
-                                  </>
+                                {match.homeLogo && (
+                                  <img src={match.homeLogo} alt="" />
                                 )}
                               </div>
 
@@ -1058,24 +1025,18 @@ function SeasonDetails() {
                                 <strong>{match.awayScore}</strong>
                               </div>
 
-                              <div className="season-details__result-team">
-                                {match.isHome ? (
-                                  <>
-                                    {match.awayLogo && (
-                                      <img src={match.awayLogo} alt="" />
-                                    )}
-
-                                    <span>{match.opponentName}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>{match.opponentName}</span>
-
-                                    {match.homeLogo && (
-                                      <img src={match.homeLogo} alt="" />
-                                    )}
-                                  </>
+                              <div
+                                className={`season-details__result-team${
+                                  match.isAway
+                                    ? " season-details__result-team--bod"
+                                    : ""
+                                }`}
+                              >
+                                {match.awayLogo && (
+                                  <img src={match.awayLogo} alt="" />
                                 )}
+
+                                <span>{match.awayName}</span>
                               </div>
                             </div>
 
