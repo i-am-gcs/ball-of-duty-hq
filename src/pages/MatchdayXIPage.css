@@ -280,6 +280,35 @@
   transform: none !important;
 }
 
+/* A PNG-n a mobil nezet apro feliratai is olvashato meretben maradnak. */
+.matchday-page__export-card--rendering .matchday-header__eyebrow {
+  font-size: 11px !important;
+}
+
+.matchday-page__export-card--rendering .matchday-team {
+  font-size: 12px !important;
+}
+
+.matchday-page__export-card--rendering .matchday-vs span,
+.matchday-page__export-card--rendering .matchday-meta strong,
+.matchday-page__export-card--rendering .matchday-stage__top span {
+  font-size: 12px !important;
+}
+
+.matchday-page__export-card--rendering .matchday-meta span,
+.matchday-page__export-card--rendering .matchday-stage__league,
+.matchday-page__export-card--rendering .matchday-player__position {
+  font-size: 9px !important;
+}
+
+.matchday-page__export-card--rendering .matchday-player__name {
+  font-size: 12px !important;
+}
+
+.matchday-page__export-card--rendering .matchday-footer {
+  font-size: 9px !important;
+}
+
 /*
  * Mobilon a gomb teljes szélességű lehet.
  */

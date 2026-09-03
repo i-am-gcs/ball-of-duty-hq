@@ -208,8 +208,6 @@ export default function MatchdayXIPage() {
         logging: false,
         width: Math.ceil(width),
         height: Math.ceil(height),
-        windowWidth: Math.ceil(width),
-        windowHeight: Math.ceil(height),
         onclone: (clonedDocument) => {
           clonedDocument
             .querySelector(".matchday-page__export-card")
