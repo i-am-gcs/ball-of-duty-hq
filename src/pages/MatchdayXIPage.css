@@ -296,13 +296,18 @@
 }
 
 .matchday-page__export-card--rendering .matchday-meta span,
-.matchday-page__export-card--rendering .matchday-stage__league,
-.matchday-page__export-card--rendering .matchday-player__position {
+.matchday-page__export-card--rendering .matchday-stage__league {
   font-size: 9px !important;
 }
 
 .matchday-page__export-card--rendering .matchday-player__name {
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+}
+
+.matchday-page__export-card--rendering .matchday-player__position {
   font-size: 12px !important;
+  line-height: 1.15 !important;
 }
 
 .matchday-page__export-card--rendering .matchday-footer {
