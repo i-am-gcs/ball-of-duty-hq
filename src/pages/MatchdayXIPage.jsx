@@ -177,11 +177,44 @@ export default function MatchdayXIPage() {
     }
 
     try {
-      const canvas = await html2canvas(exportRef.current, {
+      const exportElement = exportRef.current;
+
+      // html2canvas can measure fallback-font glyphs while the browser is still
+      // finishing font/image layout. Waiting for both keeps the exported text
+      // in exactly the same position as the on-screen card.
+      await document.fonts?.ready;
+
+      await Promise.all(
+        Array.from(exportElement.querySelectorAll("img"), (image) => {
+          if (image.complete) {
+            return Promise.resolve();
+          }
+
+          return new Promise((resolve) => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          });
+        }),
+      );
+
+      // Let the completed resources trigger their final layout before cloning.
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const { width, height } = exportElement.getBoundingClientRect();
+      const canvas = await html2canvas(exportElement, {
         backgroundColor: "#06100b",
         scale: 2,
         useCORS: true,
         logging: false,
+        width: Math.ceil(width),
+        height: Math.ceil(height),
+        windowWidth: Math.ceil(width),
+        windowHeight: Math.ceil(height),
+        onclone: (clonedDocument) => {
+          clonedDocument
+            .querySelector(".matchday-page__export-card")
+            ?.classList.add("matchday-page__export-card--rendering");
+        },
       });
 
       const link = document.createElement("a");

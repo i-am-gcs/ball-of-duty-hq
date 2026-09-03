@@ -249,6 +249,38 @@
 }
 
 /*
+ * html2canvas sajat szovegmerest hasznal. Export kozben kikapcsoljuk a
+ * tipografiai/animacios finomhangolast, hogy a meres es a kirajzolas ugyanazt
+ * a stabil dobozmodellt hasznalja, es a feliratok ne csusszanak el.
+ */
+.matchday-page__export-card--rendering,
+.matchday-page__export-card--rendering * {
+  animation: none !important;
+  transition: none !important;
+  text-rendering: auto !important;
+}
+
+.matchday-page__export-card--rendering .matchday-header__eyebrow,
+.matchday-page__export-card--rendering .matchday-team,
+.matchday-page__export-card--rendering .matchday-vs span,
+.matchday-page__export-card--rendering .matchday-meta span,
+.matchday-page__export-card--rendering .matchday-stage__top span,
+.matchday-page__export-card--rendering .matchday-stage__league,
+.matchday-page__export-card--rendering .matchday-player__position,
+.matchday-page__export-card--rendering .matchday-footer {
+  line-height: 1.2 !important;
+}
+
+.matchday-page__export-card--rendering .matchday-player__card,
+.matchday-page__export-card--rendering .matchday-player__avatar,
+.matchday-page__export-card--rendering .matchday-team,
+.matchday-page__export-card--rendering .matchday-team img,
+.matchday-page__export-card--rendering .matchday-vs,
+.matchday-page__export-card--rendering .matchday-meta > div {
+  transform: none !important;
+}
+
+/*
  * Mobilon a gomb teljes szélességű lehet.
  */
 @media (max-width: 700px) {
